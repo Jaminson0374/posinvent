@@ -23,7 +23,15 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
-import { debounceTime, distinctUntilChanged, finalize, of, switchMap } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize,
+  of,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import type Dropzone from 'dropzone';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -43,9 +51,16 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatTableModule } from '@angular/material/table';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PresentationsTabComponent } from '../presentations-tab';
 import { FormulaTabComponent } from '../formula-tab';
+import { ProductGeneralComponent } from './components/product-general/product-general';
+import { ProductSummaryComponent } from './components/product-summary/product-summary';
+import { ProductInventoryComponent } from './components/product-inventory/product-inventory';
+import { ProductAccountingComponent } from './components/product-accounting/product-accounting';
+import { ProductSuppliersComponent } from './components/product-suppliers/product-suppliers';
 import { ProductService } from '../../../../core/services/product.service';
 import { ProductTypeService } from '../../../../core/services/product-type.service';
 import { ProductStateService } from '../../../../core/services/product-state.service';
@@ -117,6 +132,8 @@ import {
   UnitOfMeasure,
 } from '../../../../core/models/product-catalog.model';
 import { Warehouse } from '../../../../core/models/warehouse.model';
+import { PageResponse } from '../../../../core/models/page.model';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 
 type FormMode = 'view' | 'new' | 'edit';
 
@@ -141,9 +158,18 @@ type FormMode = 'view' | 'new' | 'edit';
     MatProgressSpinnerModule,
     MatDividerModule,
     MatDialogModule,
+    MatTableModule,
+    MatPaginatorModule,
+    CurrencyPipe,
+    DecimalPipe,
     DragDropModule,
     PresentationsTabComponent,
     FormulaTabComponent,
+    ProductGeneralComponent,
+    ProductSummaryComponent,
+    ProductInventoryComponent,
+    ProductAccountingComponent,
+    ProductSuppliersComponent,
   ],
   templateUrl: './product-form.html',
   styleUrl: './product-form.css',
@@ -187,11 +213,19 @@ export class ProductFormComponent implements OnInit {
   readonly mode = signal<FormMode>('new');
   readonly selectedTab = signal(0);
   readonly showSearch = signal(false);
+  readonly suppressingSummary = signal(false);
   readonly loadedId = signal<string | null>(null);
   readonly searching = signal(false);
   readonly searchResults = signal<Product[]>([]);
+  readonly searchPageData = signal<PageResponse<Product> | null>(null);
+  readonly searchPage = signal(0);
+  readonly searchPageSize = signal(10);
+  readonly selectedSearchResultId = signal<string | null>(null);
+  readonly focusedSearchResultId = signal<string | null>(null);
+  readonly searchColumns = ['productCode', 'name', 'barcode', 'status', 'stock', 'salePrice'];
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly warehouseLocationsByWarehouseId = signal<Record<string, WarehouseLocation[]>>({});
+  private readonly searchRequests = new Subject<{ query: string; page: number; size: number }>();
 
   readonly suppressDependentResets = signal(false);
 
@@ -296,6 +330,9 @@ export class ProductFormComponent implements OnInit {
   });
 
   readonly supplierOptions = computed(() => this.thirdPartyService.supplierOptions.value() ?? []);
+  readonly safeSupplierOptions = computed(() =>
+    this.supplierOptions().map((s) => ({ ...s, lastName: s.lastName ?? '' })),
+  );
   readonly supplierOptionsById = computed(
     () => new Map(this.supplierOptions().map((supplier) => [supplier.id, supplier])),
   );
@@ -346,6 +383,8 @@ export class ProductFormComponent implements OnInit {
   readonly imagesArray = this.fb.array<FormGroup>([]);
   readonly promotionsArray = this.fb.array<FormGroup>([]);
   readonly priceEntriesArray = this.fb.array<FormGroup>([]);
+  readonly formulasFormArray = this.fb.array<FormGroup>([]);
+  readonly presentationsFormArray = this.fb.array<FormGroup>([]);
 
   // ── Toolbar computed ──────────────────────────────────────────────
   readonly isEditing = computed(() => this.mode() === 'new' || this.mode() === 'edit');
@@ -357,6 +396,154 @@ export class ProductFormComponent implements OnInit {
   readonly canBuscar = computed(() => this.mode() !== 'edit');
   readonly showPresentationsTab = computed(() => this.mode() === 'view' && !!this.loadedId());
   readonly showFormulaTab = computed(() => this.showPresentationsTab() && this.isFormulaOrCombo());
+
+  // ── Summary sidebar data ──────────────────────────────────────
+  readonly summaryCode = signal<string | null>(null);
+  readonly summaryName = signal<string | null>(null);
+  readonly summaryCategory = signal<string | null>(null);
+  readonly summaryUom = signal<string | null>(null);
+  readonly summaryCost = signal<number | null>(null);
+  readonly summaryMargin = signal<number | null>(null);
+  readonly summarySalePrice = signal<number | null>(null);
+  readonly summaryTax = signal<string | null>(null);
+  readonly summaryStock = signal<number | null>(null);
+
+  private buildSummary(): void {
+    const v = this.form.getRawValue();
+    this.summaryCode.set((v.productCode ?? null) as string | null);
+    this.summaryName.set((v.name ?? null) as string | null);
+    this.summaryCategory.set(this.categoryDisplay.value || null);
+    this.summaryUom.set(this.uomDisplay.value || null);
+    this.summaryCost.set(v.costPrice as number | null);
+    this.summaryMargin.set(v.profitMargin as number | null);
+    this.summarySalePrice.set(v.salePrice as number | null);
+    this.summaryTax.set(this.formatTaxDisplay(v.taxType as string | null));
+    this.summaryStock.set(v.totalStock as number | null);
+  }
+
+  private formatTaxDisplay(taxType: string | null): string {
+    if (!taxType) return 'Exento';
+    return taxType === 'EXENTO'
+      ? 'Exento'
+      : taxType === 'IVA_5'
+        ? 'IVA 5%'
+        : taxType === 'IVA_8'
+          ? 'IVA 8%'
+          : taxType === 'IVA_19'
+            ? 'IVA 19%'
+            : taxType;
+  }
+
+  // ── Draft persistence ────────────────────────────────────────────
+  private getDraftKey(): string {
+    const id = this.loadedId();
+    return `posinvent-draft-${id ?? 'new'}`;
+  }
+
+  /** Save the current form state to localStorage (excludes images). */
+  private saveLocalDraft(): void {
+    if (!this.isBrowser) return;
+
+    const v = this.form.getRawValue();
+    // Exclude images from draft
+    const draft = { ...v };
+    delete (draft as Record<string, unknown>)['images'];
+
+    if (!this.hasDraftData(draft)) {
+      localStorage.removeItem(this.getDraftKey());
+      return;
+    }
+
+    localStorage.setItem(this.getDraftKey(), JSON.stringify(draft));
+  }
+
+  /** Returns true only when the draft contains user-entered values. */
+  private hasDraftData(draft: Record<string, unknown>): boolean {
+    const defaultValues: Record<string, unknown> = {
+      costPrice: 0,
+      profitMargin: 0,
+      salePrice: 0,
+      costingMethod: 'PROMEDIO_PONDERADO',
+      initialStock: 0,
+      minStock: 0,
+      maxStock: 0,
+      totalStock: 0,
+      manufacturedInHouse: false,
+      costAffectingExp: false,
+      manageLots: false,
+      perishable: false,
+      belongsToProduct: false,
+      sellBelowMin: false,
+      inventoriable: true,
+      taxType: 'EXENTO',
+      version: 0,
+    };
+
+    return Object.entries(draft).some(([key, value]) => {
+      if (value === null || value === undefined || value === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return value !== defaultValues[key];
+    });
+  }
+
+  /** Clear the draft from localStorage for the current product. */
+  clearLocalDraft(): void {
+    localStorage.removeItem(this.getDraftKey());
+  }
+
+  /** "Guardar borrador" — immediate save + toast. */
+  guardarBorrador(): void {
+    this.saveLocalDraft();
+    void Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: 'Borrador guardado',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true,
+    });
+  }
+
+  /** On new product init, check localStorage for existing draft and prompt restore. */
+  private async checkAndRestoreDraft(): Promise<void> {
+    if (!this.isBrowser) return;
+
+    const draftJson = localStorage.getItem('posinvent-draft-new');
+    if (!draftJson) return;
+
+    let draft: Record<string, unknown> | null = null;
+    try {
+      draft = JSON.parse(draftJson);
+    } catch {
+      localStorage.removeItem('posinvent-draft-new');
+      return;
+    }
+
+    if (!draft || !this.hasDraftData(draft)) {
+      localStorage.removeItem('posinvent-draft-new');
+      return;
+    }
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Restaurar borrador?',
+      text: 'Tiene datos sin guardar de una sesión anterior.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, restaurar',
+      cancelButtonText: 'No, descartar',
+      confirmButtonColor: '#3b82f6',
+      cancelButtonColor: '#64748b',
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      this.form.patchValue(draft, { emitEvent: false });
+      this.buildSummary();
+    } else {
+      localStorage.removeItem('posinvent-draft-new');
+    }
+  }
 
   private isFormulaOrCombo(): boolean {
     const typeId = this.form.get('productTypeId')?.value as string | null;
@@ -552,6 +739,36 @@ export class ProductFormComponent implements OnInit {
       const u = this.uomService.units.value()?.find((u) => u.id === id);
       this.uomDisplay.setValue(u ? `${u.code} — ${u.name}` : '', { emitEvent: false });
     });
+
+    // ── Summary derivation effect ─────────────────────────────────
+    effect(() => {
+      // Read all form signals to trigger re-derivation
+      productTypeSig();
+      productStateSig();
+      brandSig();
+      modelSig();
+      categorySig();
+      groupSig();
+      uomSig();
+      // Also depend on the display values (read them explicitly)
+      this.typeDisplay.value;
+      this.stateDisplay.value;
+      this.brandDisplay.value;
+      this.modelDisplay.value;
+      this.categoryDisplay.value;
+      this.groupDisplay.value;
+      this.uomDisplay.value;
+      this.buildSummary();
+    });
+
+    // ── Draft auto-save (debounced 2s) ──────────────────────────
+    this.form.valueChanges
+      .pipe(debounceTime(2000), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (this.isEditing()) {
+          this.saveLocalDraft();
+        }
+      });
   }
 
   supplierOptionLabel(supplier: ThirdPartySupplierOption): string {
@@ -573,6 +790,7 @@ export class ProductFormComponent implements OnInit {
         this.mode.set('new');
         this.enableForm();
         this.syncPriceEntriesWithCatalog();
+        this.checkAndRestoreDraft();
       } else {
         this.loadedId.set(id);
         this.loading.set(true);
@@ -592,29 +810,41 @@ export class ProductFormComponent implements OnInit {
     });
 
     this.searchControl.valueChanges
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((query) => {
+        if (this.showSearch()) {
+          this.searchRequests.next({ query, page: 0, size: this.searchPageSize() });
+        }
+      });
+
+    this.searchRequests
       .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        switchMap(() => {
-          const q = this.searchControl.getRawValue().trim();
-
-          if (!q) {
-            this.searching.set(false);
-            this.searchResults.set([]);
-            return of(null);
-          }
-
+        switchMap(({ query, page, size }) => {
           this.searching.set(true);
-          return this.service.search(q, 0, 10);
+          return this.service.search(query, page, size).pipe(
+            catchError(() => of(null)),
+            finalize(() => this.searching.set(false)),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (page) => {
-          this.searching.set(false);
-          if (page) this.searchResults.set(page.content);
+        next: (result) => {
+          if (!result) {
+            this.searchPageData.set(null);
+            this.searchResults.set([]);
+            return;
+          }
+          this.searchPageData.set(result);
+          this.searchResults.set(result.content);
+          this.searchPage.set(result.page);
+          this.searchPageSize.set(result.size);
         },
-        error: () => this.searching.set(false),
+        error: () => {
+          this.searching.set(false);
+          this.searchPageData.set(null);
+          this.searchResults.set([]);
+        },
       });
   }
 
@@ -665,6 +895,8 @@ export class ProductFormComponent implements OnInit {
     this.imageUploadError.set(null);
     this.promotionsArray.clear();
     this.priceEntriesArray.clear();
+    this.formulasFormArray.clear();
+    this.presentationsFormArray.clear();
     this.markPriceEntriesChanged();
     this.clearPriceListSearch();
     this.syncPriceEntriesWithCatalog();
@@ -1286,6 +1518,8 @@ export class ProductFormComponent implements OnInit {
     this.imagesArray.enable();
     this.promotionsArray.enable();
     this.priceEntriesArray.enable();
+    this.formulasFormArray.enable();
+    this.presentationsFormArray.enable();
     this.priceListSearch.enable({ emitEvent: false });
   }
 
@@ -1305,6 +1539,8 @@ export class ProductFormComponent implements OnInit {
     this.imagesArray.disable();
     this.promotionsArray.disable();
     this.priceEntriesArray.disable();
+    this.formulasFormArray.disable();
+    this.presentationsFormArray.disable();
     this.priceListSearch.disable({ emitEvent: false });
   }
 
@@ -1924,6 +2160,7 @@ export class ProductFormComponent implements OnInit {
         this.mode.set('view');
         this.disableForm();
         this.service.reload();
+        this.clearLocalDraft();
         Swal.fire({
           icon: 'success',
           title: '¡Guardado!',
@@ -1980,16 +2217,98 @@ export class ProductFormComponent implements OnInit {
 
   buscar(): void {
     this.showSearch.set(!this.showSearch());
-    if (!this.showSearch()) {
-      this.searchControl.setValue('', { emitEvent: false });
-      this.searchResults.set([]);
+    if (this.showSearch()) {
+      this.searchPage.set(0);
+      this.searchRequests.next({
+        query: this.searchControl.getRawValue(),
+        page: 0,
+        size: this.searchPageSize(),
+      });
+      return;
     }
+
+    this.closeSearchPanel();
   }
 
-  selectSearchResult(p: Product): void {
+  closeSearchPanel(): void {
     this.showSearch.set(false);
     this.searchControl.setValue('', { emitEvent: false });
     this.searchResults.set([]);
+    this.searchPageData.set(null);
+    this.focusedSearchResultId.set(null);
+  }
+
+  focusFirstSearchRow(): void {
+    if (!this.showSearch() || !this.isBrowser) return;
+    setTimeout(() => {
+      const row = document.querySelector<HTMLElement>('.pf-search-table .mat-mdc-row');
+      row?.focus();
+    });
+  }
+
+  onSearchRowKeydown(event: KeyboardEvent, product: Product): void {
+    if (!this.isBrowser) return;
+    const rows = Array.from(
+      document.querySelectorAll<HTMLElement>('.pf-search-table .mat-mdc-row'),
+    );
+    const currentIndex = rows.indexOf(document.activeElement as HTMLElement);
+
+    switch (event.key) {
+      case 'Enter':
+        event.preventDefault();
+        this.selectSearchResult(product);
+        break;
+      case 'Escape':
+        event.preventDefault();
+        this.closeSearchPanel();
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        rows[Math.min(currentIndex + 1, rows.length - 1)]?.focus();
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (currentIndex > 0) rows[currentIndex - 1].focus();
+        else document.querySelector<HTMLElement>('.pf-search-field input')?.focus();
+        break;
+      case 'PageDown':
+        event.preventDefault();
+        rows[Math.min(currentIndex + 5, rows.length - 1)]?.focus();
+        break;
+      case 'PageUp':
+        event.preventDefault();
+        rows[Math.max(currentIndex - 5, 0)]?.focus();
+        break;
+      case 'Home':
+        event.preventDefault();
+        rows[0]?.focus();
+        break;
+      case 'End':
+        event.preventDefault();
+        rows[rows.length - 1]?.focus();
+        break;
+    }
+  }
+
+  onSearchPageChange(event: PageEvent): void {
+    this.searchPage.set(event.pageIndex);
+    this.searchPageSize.set(event.pageSize);
+    this.searchRequests.next({
+      query: this.searchControl.getRawValue(),
+      page: event.pageIndex,
+      size: event.pageSize,
+    });
+  }
+
+  isSearchRowSelected(product: Product): boolean {
+    return (
+      this.selectedSearchResultId() === product.id || this.focusedSearchResultId() === product.id
+    );
+  }
+
+  selectSearchResult(p: Product): void {
+    this.selectedSearchResultId.set(p.id);
+    this.closeSearchPanel();
     this.router.navigate(['..', p.id], { relativeTo: this.route });
   }
 

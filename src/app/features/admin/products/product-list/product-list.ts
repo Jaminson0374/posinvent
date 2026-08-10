@@ -16,10 +16,29 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ProductService } from '../../../../core/services/product.service';
 
 type ProductListFilter = 'exempt' | 'active' | 'inactive' | 'no-stock' | 'below-min-stock';
+
+function spanishPaginatorIntl(): MatPaginatorIntl {
+  const paginatorIntl = new MatPaginatorIntl();
+  paginatorIntl.itemsPerPageLabel = 'Registros por página:';
+  paginatorIntl.nextPageLabel = 'Página siguiente';
+  paginatorIntl.previousPageLabel = 'Página anterior';
+  paginatorIntl.firstPageLabel = 'Primera página';
+  paginatorIntl.lastPageLabel = 'Última página';
+  paginatorIntl.getRangeLabel = (page, pageSize, length) => {
+    if (length === 0 || pageSize === 0) {
+      return `Mostrando 0 de ${length} registros`;
+    }
+
+    const startIndex = page * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, length);
+    return `Mostrando ${startIndex + 1} a ${endIndex} de ${length} registros`;
+  };
+  return paginatorIntl;
+}
 
 @Component({
   selector: 'app-product-list',
@@ -42,6 +61,7 @@ type ProductListFilter = 'exempt' | 'active' | 'inactive' | 'no-stock' | 'below-
   ],
   templateUrl: './product-list.html',
   styleUrl: './product-list.css',
+  providers: [{ provide: MatPaginatorIntl, useFactory: spanishPaginatorIntl }],
 })
 export class ProductListComponent implements OnInit {
   private readonly router = inject(Router);
@@ -62,7 +82,6 @@ export class ProductListComponent implements OnInit {
   readonly pageSizeOptions = [10, 20, 30];
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly data = signal<PageResponse<Product> | null>(null);
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly filterControl = new FormControl<ProductListFilter[]>([], { nonNullable: true });
   readonly filterPanelOpen = signal(false);
@@ -76,10 +95,55 @@ export class ProductListComponent implements OnInit {
   ];
   readonly selectedFilters = signal<ProductListFilter[]>([]);
 
+  // ── Full-dataset filtering (PR 5) ──
+  readonly fullDataset = signal<Product[]>([]);
+  readonly searchText = signal('');
+
+  /** Full filtered dataset — text AND status filters applied to ALL products. */
+  readonly filteredRows = computed(() => {
+    const all = this.fullDataset();
+    const text = this.searchText().toLowerCase();
+    const filters = this.selectedFilters();
+
+    if (!text && filters.length === 0) return all;
+
+    return all.filter((product) => {
+      if (text) {
+        const matchesText =
+          product.productCode?.toLowerCase().includes(text) ||
+          product.barcode?.toLowerCase().includes(text) ||
+          product.name?.toLowerCase().includes(text);
+        if (!matchesText) return false;
+      }
+      if (filters.length > 0) {
+        return filters.every((f) => this.matchesFilter(product, f));
+      }
+      return true;
+    });
+  });
+
+  /** Paginated PageResponse, client-side from filteredRows. */
+  readonly data = computed<PageResponse<Product> | null>(() => {
+    const filtered = this.filteredRows();
+    const page = this.service.page();
+    const size = this.service.pageSize();
+    const start = page * size;
+    const total = filtered.length;
+    const totalPages = size > 0 ? Math.ceil(total / size) : 0;
+
+    return {
+      content: filtered.slice(start, start + size),
+      page,
+      size,
+      totalElements: total,
+      totalPages,
+      last: page + 1 >= totalPages,
+    };
+  });
+
   readonly summaryCards = computed(() => {
     const rows = this.filteredRows();
-    const pageData = this.data();
-    const total = pageData?.totalElements ?? 0;
+    const total = rows.length;
     const active = rows.filter((product) => product.active).length;
     const lowStock = rows.filter((product) => product.totalStock <= product.minStock).length;
     const inventoryValue = rows.reduce(
@@ -128,21 +192,6 @@ export class ProductListComponent implements OnInit {
     ];
   });
 
-  filteredRows(): Product[] {
-    const pageData = this.data();
-    if (!pageData) {
-      return [];
-    }
-
-    if (this.selectedFilters().length === 0) {
-      return pageData.content;
-    }
-
-    return pageData.content.filter((product) =>
-      this.selectedFilters().every((filter) => this.matchesFilter(product, filter)),
-    );
-  }
-
   selectedFilterLabels(): string[] {
     const selectedFilters = new Set(this.selectedFilters());
     return this.filterOptions
@@ -175,7 +224,6 @@ export class ProductListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.searchControl.setValue(this.service.query(), { emitEvent: false });
     this.loadProducts();
 
     this.searchControl.valueChanges
@@ -186,34 +234,35 @@ export class ProductListComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((value) => {
-        this.service.query.set(value.trim());
+        this.searchText.set(value.trim());
         this.service.page.set(0);
-        this.loadProducts();
       });
 
     this.filterControl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((filters) => {
         this.selectedFilters.set(filters ?? []);
+        this.service.page.set(0);
       });
   }
 
+  /** Fetch the FULL product dataset for client-side filtering. */
   loadProducts(): void {
     this.loading.set(true);
     this.error.set(null);
 
     this.service
-      .search(this.service.query(), this.service.page(), this.service.pageSize())
+      .search('', 0, 99999)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
           this.loading.set(false);
-          this.data.set(page);
+          this.fullDataset.set(page.content);
         },
         error: () => {
           this.loading.set(false);
           this.error.set('Error cargando artículos. Intentá de nuevo.');
-          this.data.set(null);
+          this.fullDataset.set([]);
         },
       });
   }
@@ -272,6 +321,7 @@ export class ProductListComponent implements OnInit {
     this.router.navigate([id], { relativeTo: this.route });
   }
 
+  /** Client-side pagination — updates page/size, no backend call. */
   onPageChange(ev: PageEvent): void {
     if (ev.pageSize !== this.service.pageSize()) {
       this.service.pageSize.set(ev.pageSize);
@@ -279,7 +329,6 @@ export class ProductListComponent implements OnInit {
     } else {
       this.service.page.set(ev.pageIndex);
     }
-
-    this.loadProducts();
+    // `data` computed recalculates automatically — no backend call needed.
   }
 }

@@ -1,35 +1,61 @@
 <div class="pf-page">
-  <!-- ══ Toolbar ══════════════════════════════════════════════════════ -->
-  <div class="pf-toolbar">
-    <div class="pf-toolbar-left">
-      <button mat-icon-button (click)="goBack()" matTooltip="Volver a la lista">
+  <!-- ══ Header ═══════════════════════════════════════════════════════ -->
+  <header class="pf-header pf-toolbar">
+    <div class="pf-header__identity">
+      <button
+        mat-icon-button
+        class="pf-back-button"
+        (click)="goBack()"
+        matTooltip="Volver a la lista"
+        aria-label="Volver a la lista"
+      >
         <mat-icon>arrow_back</mat-icon>
       </button>
-      <span class="pf-breadcrumb">{{ pageTitle() }}</span>
+      <div class="pf-header__copy">
+        <span class="pf-eyebrow">Gestión de artículos</span>
+        <h1>{{ pageTitle() }}</h1>
+        <p>
+          @if (mode() === 'new') {
+            Registra un nuevo producto o materia prima en el inventario.
+          } @else if (mode() === 'edit') {
+            Actualiza la información y configuración del artículo.
+          } @else {
+            Consulta la información y configuración del artículo.
+          }
+        </p>
+      </div>
     </div>
 
-    <div class="pf-toolbar-actions">
-      <button class="tb-btn" [disabled]="!canNuevo()" (click)="nuevo()">
-        <mat-icon>add</mat-icon> Nuevo
-      </button>
-      <button class="tb-btn" [disabled]="!canEditar()" (click)="editar()">
-        <mat-icon>edit</mat-icon> Editar
+    <div class="pf-header__actions pf-toolbar-actions">
+      <button class="tb-btn" [disabled]="!canCancelar()" (click)="cancelar()">Cancelar</button>
+      <button class="tb-btn tb-btn--draft" [disabled]="!canCancelar()" (click)="guardarBorrador()">
+        <mat-icon>bookmark_border</mat-icon> Guardar borrador
       </button>
       <button class="tb-btn tb-btn--primary" [disabled]="!canGuardar()" (click)="save()">
         @if (saving()) {
           <mat-spinner diameter="16" />
         } @else {
-          <mat-icon>save</mat-icon> Guardar
+          <mat-icon>check</mat-icon> Guardar
         }
       </button>
-      <button class="tb-btn" [disabled]="!canCancelar()" (click)="cancelar()">
-        <mat-icon>cancel</mat-icon> Cancelar
+    </div>
+  </header>
+
+  <!-- Legacy actions remain available without competing with the form workflow. -->
+  @if (canNuevo() || canEditar() || canBuscar()) {
+    <div class="pf-context-actions">
+      <span>Acciones adicionales</span>
+      <button class="pf-context-action" [disabled]="!canNuevo()" (click)="nuevo()">
+        <mat-icon>add</mat-icon> Nuevo
       </button>
-      <button class="tb-btn" [disabled]="!canBuscar()" (click)="buscar()">
+      <button class="pf-context-action" [disabled]="!canEditar()" (click)="editar()">
+        <mat-icon>edit</mat-icon> Editar
+      </button>
+      <button class="pf-context-action" [disabled]="!canBuscar()" (click)="buscar()">
         <mat-icon>search</mat-icon> Buscar
       </button>
     </div>
-  </div>
+  }
 
   <!-- ══ Error bar ═════════════════════════════════════════════════════ -->
   @if (error()) {
@@ -38,50 +64,131 @@
 
   <!-- ══ Search panel ══════════════════════════════════════════════════ -->
   @if (showSearch()) {
-    <div class="pf-search-panel">
+    <div class="pf-search-backdrop" (click)="closeSearchPanel()"></div>
+    <section class="pf-search-panel" aria-label="Seleccionar artículo">
       <div class="pf-search-input-row">
         <mat-form-field appearance="outline" class="pf-search-field">
-          <mat-label>Buscar artículo por código, código de barras o nombre</mat-label>
+          <mat-label>Buscar artículo</mat-label>
           <input
             matInput
             [formControl]="searchControl"
             placeholder="Escribí código, código de barras o nombre..."
             autocomplete="off"
+            (keydown.escape)="$event.preventDefault(); closeSearchPanel()"
+            (keydown.enter)="$event.preventDefault(); focusFirstSearchRow()"
           />
           <mat-icon matSuffix>search</mat-icon>
         </mat-form-field>
-        <button mat-icon-button (click)="buscar()" matTooltip="Cerrar">
+        <button
+          mat-icon-button
+          (click)="closeSearchPanel()"
+          matTooltip="Cerrar"
+          aria-label="Cerrar búsqueda"
+        >
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
+      <div class="pf-search-panel-header">
+        <div class="pf-search-panel-title">
+          <mat-icon>inventory_2</mat-icon>
+          <span>Seleccionar artículo</span>
+          @if (!searching() && searchPageData(); as data) {
+            <span class="pf-search-count">{{ data.totalElements }} resultados</span>
+          }
+        </div>
+      </div>
+
       @if (searching()) {
-        <div class="pf-search-loading"><mat-spinner diameter="24" /></div>
+        <div class="pf-search-loading">
+          <mat-spinner diameter="28" />
+          <span>Buscando artículos...</span>
+        </div>
       }
 
-      @if (searchResults().length > 0) {
-        <table class="pf-search-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nombre</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (p of searchResults(); track p.id) {
-              <tr class="pf-search-row" (click)="selectSearchResult(p)">
-                <td>{{ p.productCode }}</td>
-                <td>{{ p.name }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
+      @if (!searching() && searchPageData(); as data) {
+        @if (data.content.length > 0) {
+          <div class="pf-search-table-wrapper">
+            <table mat-table [dataSource]="data.content" class="pf-search-table">
+              <ng-container matColumnDef="productCode">
+                <th mat-header-cell *matHeaderCellDef class="pf-search-col-code">Código</th>
+                <td mat-cell *matCellDef="let p" class="pf-search-col-code">
+                  <span class="pf-code-badge">{{ p.productCode }}</span>
+                </td>
+              </ng-container>
 
-      @if (!searching() && searchControl.value && searchResults().length === 0) {
-        <p class="pf-search-empty">Sin resultados para "{{ searchControl.value }}"</p>
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef class="pf-search-col-name">Artículo</th>
+                <td mat-cell *matCellDef="let p" class="pf-search-col-name">
+                  <div class="pf-product-name-cell">
+                    <strong>{{ p.name }}</strong>
+                    @if (p.reference) {
+                      <small>Ref. {{ p.reference }}</small>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="barcode">
+                <th mat-header-cell *matHeaderCellDef>Código de barras</th>
+                <td mat-cell *matCellDef="let p">{{ p.barcode || 'Sin código' }}</td>
+              </ng-container>
+
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>Estado</th>
+                <td mat-cell *matCellDef="let p">
+                  <span class="pf-status-badge" [class.pf-status-badge--inactive]="!p.active">
+                    {{ p.active ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="stock">
+                <th mat-header-cell *matHeaderCellDef class="pf-search-col-number">Stock</th>
+                <td mat-cell *matCellDef="let p" class="pf-search-col-number">
+                  {{ p.totalStock | number: '1.0-3' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="salePrice">
+                <th mat-header-cell *matHeaderCellDef class="pf-search-col-number">Precio</th>
+                <td mat-cell *matCellDef="let p" class="pf-search-col-number">
+                  {{ p.salePrice | currency }}
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="searchColumns; sticky: true"></tr>
+              <tr
+                mat-row
+                *matRowDef="let p; columns: searchColumns"
+                class="pf-search-row"
+                tabindex="0"
+                [class.pf-search-row--selected]="isSearchRowSelected(p)"
+                (focus)="focusedSearchResultId.set(p.id)"
+                (click)="selectSearchResult(p)"
+                (keydown)="onSearchRowKeydown($event, p)"
+              ></tr>
+            </table>
+          </div>
+
+          @if (data.totalElements > searchPageSize()) {
+            <mat-paginator
+              [length]="data.totalElements"
+              [pageSize]="searchPageSize()"
+              [pageIndex]="searchPage()"
+              [pageSizeOptions]="[5, 10, 20, 50]"
+              (page)="onSearchPageChange($event)"
+              showFirstLastButtons
+            />
+          }
+        } @else {
+          <div class="pf-search-empty">
+            <mat-icon>search_off</mat-icon>
+            <span>Sin resultados para esta búsqueda</span>
+          </div>
+        }
       }
-    </div>
+    </section>
   }
 
   <!-- ══ Loading ═══════════════════════════════════════════════════════ -->
@@ -96,637 +203,351 @@
         [selectedIndex]="selectedTab()"
         (selectedIndexChange)="selectedTab.set($event)"
       >
-        <!-- ══ TAB 1 — DATOS GENERALES ════════════════════════════════ -->
-        <mat-tab label="Datos Gnrls">
-          <div class="tab-content">
-            <p class="section-title">IDENTIFICACIÓN</p>
-
-            <div class="form-row-3">
-              <mat-form-field appearance="outline">
-                <mat-label>Código *</mat-label>
-                <input matInput formControlName="productCode" maxlength="50" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Código de barras</mat-label>
-                <input matInput formControlName="barcode" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Referencia</mat-label>
-                <input matInput formControlName="reference" />
-              </mat-form-field>
-            </div>
-            <div class="form-row-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Nombre comercial*</mat-label>
-                <input matInput formControlName="name" maxlength="100" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Descripción</mat-label>
-                <textarea matInput formControlName="description" rows="2"></textarea>
-              </mat-form-field>
-            </div>
-            <mat-divider></mat-divider>
-            <p class="section-title">CLASIFICACIÓN</p>
-
-            <div class="form-row-3">
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo de artículo</mat-label>
-                <input
-                  matInput
-                  [formControl]="typeDisplay"
-                  [matAutocomplete]="autoType"
-                  (input)="typeFilter.set($any($event.target).value)"
-                  (blur)="syncTypeDisplay()"
-                />
-                <mat-autocomplete
-                  #autoType="matAutocomplete"
-                  (optionSelected)="onTypeSelected($event)"
-                >
-                  @for (t of filteredTypes(); track t.id) {
-                    <mat-option [value]="t.id">{{ t.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{ typeFilter() ? ' "' + typeFilter() + '"' : ' nuevo tipo' }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Categoría</mat-label>
-                <input
-                  matInput
-                  [formControl]="categoryDisplay"
-                  [matAutocomplete]="autoCategory"
-                  (input)="categoryFilter.set($any($event.target).value)"
-                  (blur)="syncCategoryDisplay()"
-                />
-                <mat-autocomplete
-                  #autoCategory="matAutocomplete"
-                  (optionSelected)="onCategorySelected($event)"
-                >
-                  @for (c of filteredCategories(); track c.id) {
-                    <mat-option [value]="c.id">{{ c.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{
-                        categoryFilter() ? ' "' + categoryFilter() + '"' : ' nueva categoría'
-                      }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Grupo</mat-label>
-                <input
-                  matInput
-                  [formControl]="groupDisplay"
-                  [matAutocomplete]="autoGroup"
-                  (input)="groupFilter.set($any($event.target).value)"
-                  (blur)="syncGroupDisplay()"
-                />
-                <mat-autocomplete
-                  #autoGroup="matAutocomplete"
-                  (optionSelected)="onGroupSelected($event)"
-                >
-                  @for (g of filteredGroups(); track g.id) {
-                    <mat-option [value]="g.id">{{ g.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{ groupFilter() ? ' "' + groupFilter() + '"' : ' nuevo grupo' }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-            </div>
-            <div class="form-row-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Estado</mat-label>
-                <input
-                  matInput
-                  [formControl]="stateDisplay"
-                  [matAutocomplete]="autoState"
-                  (input)="stateFilter.set($any($event.target).value)"
-                  (blur)="syncStateDisplay()"
-                />
-                <mat-autocomplete
-                  #autoState="matAutocomplete"
-                  (optionSelected)="onStateSelected($event)"
-                >
-                  @for (s of filteredStates(); track s.id) {
-                    <mat-option [value]="s.id">{{ s.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{ stateFilter() ? ' "' + stateFilter() + '"' : ' nuevo estado' }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Unidad de medida</mat-label>
-                <input
-                  matInput
-                  [formControl]="uomDisplay"
-                  [matAutocomplete]="autoUom"
-                  (input)="uomFilter.set($any($event.target).value)"
-                  (blur)="syncUomDisplay()"
-                />
-                <mat-autocomplete
-                  #autoUom="matAutocomplete"
-                  (optionSelected)="onUomSelected($event)"
-                >
-                  @for (u of filteredUoms(); track u.id) {
-                    <mat-option [value]="u.id">{{ u.code }} — {{ u.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{ uomFilter() ? ' "' + uomFilter() + '"' : ' nueva U.M.' }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-            </div>
-
-            <div class="form-row-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Marca</mat-label>
-                <input
-                  matInput
-                  [formControl]="brandDisplay"
-                  [matAutocomplete]="autoBrand"
-                  (input)="brandFilter.set($any($event.target).value)"
-                  (blur)="syncBrandDisplay()"
-                />
-                <mat-autocomplete
-                  #autoBrand="matAutocomplete"
-                  (optionSelected)="onBrandSelected($event)"
-                >
-                  @for (b of filteredBrands(); track b.id) {
-                    <mat-option [value]="b.id">{{ b.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{ brandFilter() ? ' "' + brandFilter() + '"' : ' nueva marca' }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Modelo</mat-label>
-                <input
-                  matInput
-                  [formControl]="modelDisplay"
-                  [matAutocomplete]="autoModel"
-                  (input)="modelFilter.set($any($event.target).value)"
-                  (blur)="syncModelDisplay()"
-                />
-                <mat-autocomplete
-                  #autoModel="matAutocomplete"
-                  (optionSelected)="onModelSelected($event)"
-                >
-                  @for (m of filteredModels(); track m.id) {
-                    <mat-option [value]="m.id">{{ m.name }}</mat-option>
-                  }
-                  @if (isEditing()) {
-                    <mat-option value="__create__" class="qc-create-option">
-                      <mat-icon class="qc-icon">add_circle</mat-icon>
-                      Crear{{ modelFilter() ? ' "' + modelFilter() + '"' : ' nuevo modelo' }}
-                    </mat-option>
-                  }
-                </mat-autocomplete>
-              </mat-form-field>
-            </div>
-            <mat-divider></mat-divider>
-            <p class="section-title">COSTOS Y PRECIOS</p>
-
-            <div class="form-row-4">
-              <mat-form-field appearance="outline">
-                <mat-label>Costo</mat-label>
-                <span matPrefix>$&nbsp;</span>
-                <input matInput type="number" formControlName="costPrice" min="0" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>% Utilidad</mat-label>
-                <input matInput type="number" formControlName="profitMargin" min="0" max="100" />
-                <span matSuffix>%</span>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>IVA</mat-label>
-                <mat-select formControlName="taxType">
-                  @for (t of taxOptions; track t.value) {
-                    <mat-option [value]="t.value">{{ t.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>P.Venta</mat-label>
-                <span matPrefix>$&nbsp;</span>
-                <input matInput type="number" formControlName="salePrice" readonly />
-              </mat-form-field>
-            </div>
-
-            <p class="section-title">LISTAS DE PRECIOS</p>
-
-            <div class="form-row-3">
-              <div class="sub-table-row price-entry-search-row">
-                <mat-form-field appearance="outline" class="price-entry-search-field">
-                  <mat-label>Buscar lista de precio</mat-label>
+        <!-- ══ TAB 1 — GENERAL ════════════════════════════════════════ -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>description</mat-icon>
+            General
+          </ng-template>
+          <app-product-general
+            [form]="form"
+            [displayControls]="{
+              typeDisplay: typeDisplay,
+              stateDisplay: stateDisplay,
+              brandDisplay: brandDisplay,
+              modelDisplay: modelDisplay,
+              categoryDisplay: categoryDisplay,
+              groupDisplay: groupDisplay,
+              uomDisplay: uomDisplay,
+            }"
+          >
+            <!-- Classification autocomplete projected into card 2 slot -->
+            <ng-container classification>
+              <div class="classification-grid classification-grid--four">
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de artículo</mat-label>
                   <input
                     matInput
-                    [formControl]="priceListSearch"
-                    [matAutocomplete]="autoPriceList"
-                    (input)="priceListFilter.set($any($event.target).value)"
+                    [formControl]="typeDisplay"
+                    [matAutocomplete]="autoType"
+                    (input)="typeFilter.set($any($event.target).value)"
+                    (blur)="syncTypeDisplay()"
                     autocomplete="off"
                   />
                   <mat-autocomplete
-                    #autoPriceList="matAutocomplete"
-                    (optionSelected)="onPriceListSelected($event)"
+                    #autoType="matAutocomplete"
+                    (optionSelected)="onTypeSelected($event)"
                   >
-                    @for (priceList of filteredAvailablePriceLists(); track priceList.id) {
-                      <mat-option [value]="priceList.id">{{ priceList.name }}</mat-option>
+                    @for (t of filteredTypes(); track t.id) {
+                      <mat-option [value]="t.id">{{ t.name }}</mat-option>
                     }
-                    @if (filteredAvailablePriceLists().length === 0) {
-                      <mat-option disabled>No hay listas disponibles para agregar.</mat-option>
+                    @if (isEditing()) {
+                      <mat-option value="__create__" class="qc-create-option">
+                        <mat-icon class="qc-icon">add_circle</mat-icon>
+                        Crear{{ typeFilter() ? ' "' + typeFilter() + '"' : ' nuevo tipo' }}
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Categoría</mat-label>
+                  <input
+                    matInput
+                    [formControl]="categoryDisplay"
+                    [matAutocomplete]="autoCategory"
+                    (input)="categoryFilter.set($any($event.target).value)"
+                    (blur)="syncCategoryDisplay()"
+                    autocomplete="off"
+                  />
+                  <mat-autocomplete
+                    #autoCategory="matAutocomplete"
+                    (optionSelected)="onCategorySelected($event)"
+                  >
+                    @for (c of filteredCategories(); track c.id) {
+                      <mat-option [value]="c.id">{{ c.name }}</mat-option>
+                    }
+                    @if (isEditing()) {
+                      <mat-option value="__create__" class="qc-create-option">
+                        <mat-icon class="qc-icon">add_circle</mat-icon>
+                        Crear{{
+                          categoryFilter() ? ' "' + categoryFilter() + '"' : ' nueva categoría'
+                        }}
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Grupo</mat-label>
+                  <input
+                    matInput
+                    [formControl]="groupDisplay"
+                    [matAutocomplete]="autoGroup"
+                    (input)="groupFilter.set($any($event.target).value)"
+                    (blur)="syncGroupDisplay()"
+                    autocomplete="off"
+                  />
+                  <mat-autocomplete
+                    #autoGroup="matAutocomplete"
+                    (optionSelected)="onGroupSelected($event)"
+                  >
+                    @for (g of filteredGroups(); track g.id) {
+                      <mat-option [value]="g.id">{{ g.name }}</mat-option>
+                    }
+                    @if (isEditing()) {
+                      <mat-option value="__create__" class="qc-create-option">
+                        <mat-icon class="qc-icon">add_circle</mat-icon>
+                        Crear{{ groupFilter() ? ' "' + groupFilter() + '"' : ' nuevo grupo' }}
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Estado</mat-label>
+                  <input
+                    matInput
+                    [formControl]="stateDisplay"
+                    [matAutocomplete]="autoState"
+                    (input)="stateFilter.set($any($event.target).value)"
+                    (blur)="syncStateDisplay()"
+                    autocomplete="off"
+                  />
+                  <mat-autocomplete
+                    #autoState="matAutocomplete"
+                    (optionSelected)="onStateSelected($event)"
+                  >
+                    @for (s of filteredStates(); track s.id) {
+                      <mat-option [value]="s.id">{{ s.name }}</mat-option>
+                    }
+                    @if (isEditing()) {
+                      <mat-option value="__create__" class="qc-create-option">
+                        <mat-icon class="qc-icon">add_circle</mat-icon>
+                        Crear{{ stateFilter() ? ' "' + stateFilter() + '"' : ' nuevo estado' }}
+                      </mat-option>
                     }
                   </mat-autocomplete>
                 </mat-form-field>
               </div>
-            </div>
 
-            @if (priceEntriesArray.length === 0) {
-              <p class="sub-table-empty">Todavía no agregaste listas de precios.</p>
-            } @else {
-              @for (
-                entryRow of priceEntriesArray.controls;
-                let index = $index;
-                track entryRow.get('priceListId')?.value
-              ) {
-                <div class="sub-table-row price-entry-row" [formGroup]="$any(entryRow)">
-                  <mat-form-field appearance="outline" class="price-entry-list-name">
-                    <mat-label>Lista</mat-label>
-                    <input matInput formControlName="priceListName" readonly />
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                    <mat-label>P.Venta</mat-label>
-                    <span matPrefix>$&nbsp;</span>
-                    <input matInput type="number" formControlName="price" min="0" />
-                    <mat-error>Ingresá un precio válido.</mat-error>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                    <mat-label>% Utilidad</mat-label>
-                    <input
-                      matInput
-                      type="number"
-                      formControlName="profitMargin"
-                      (input)="recalculatePriceEntryPrice($any(entryRow))"
-                      min="0"
-                      max="100"
-                    />
-                    <span matSuffix>%</span>
-                    <mat-error>Ingresá un porcentaje entre 0 y 100.</mat-error>
-                  </mat-form-field>
-
-                  <button
-                    mat-icon-button
-                    type="button"
-                    color="warn"
-                    matTooltip="Eliminar lista"
-                    [disabled]="priceEntriesArray.disabled"
-                    (click)="removePriceEntry(index)"
-                  >
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                </div>
-              }
-            }
-
-            <mat-divider></mat-divider>
-            <p class="section-title">CONTROL DE INVENTARIO</p>
-
-            <div class="form-row-2">
-              <mat-form-field appearance="outline" style="grid-column: 1 / -1">
-                <mat-label>Método de costeo</mat-label>
-                <mat-select formControlName="costingMethod">
-                  @for (c of costingOptions; track c.value) {
-                    <mat-option [value]="c.value">{{ c.label }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="form-row-4">
-              <mat-form-field appearance="outline">
-                <mat-label>Stock inicial</mat-label>
-                <input matInput type="number" formControlName="initialStock" min="0" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Stock mínimo</mat-label>
-                <input matInput type="number" formControlName="minStock" min="0" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Stock máximo</mat-label>
-                <input matInput type="number" formControlName="maxStock" min="0" />
-              </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Existencia</mat-label>
-                <input matInput type="number" formControlName="totalStock" />
-                <mat-icon matSuffix>inventory</mat-icon>
-              </mat-form-field>
-            </div>
-
-            <div class="checkboxes-grid">
-              <mat-checkbox formControlName="inventoriable">Inventariable</mat-checkbox>
-              <mat-checkbox formControlName="manufacturedInHouse">Elaborado en casa</mat-checkbox>
-              <mat-checkbox formControlName="costAffectingExp">Gasto afecta costo</mat-checkbox>
-              <mat-checkbox formControlName="manageLots">Maneja lotes</mat-checkbox>
-              <mat-checkbox formControlName="perishable">Perecedero</mat-checkbox>
-              <mat-checkbox formControlName="belongsToProduct"
-                >Pertenece a un producto</mat-checkbox
-              >
-              <mat-checkbox formControlName="sellBelowMin">Vender bajo mínimo</mat-checkbox>
-            </div>
-          </div>
-        </mat-tab>
-
-        <!-- ══ TAB 2 — INVENTARIO Y LOTES ════════════════════════════ -->
-        <mat-tab label="Inventario y Lotes">
-          <div class="tab-content">
-            <div class="sub-table-header">
-              <p class="section-title" style="margin: 0">BODEGAS ASIGNADAS</p>
-              @if (isEditing()) {
-                <button class="tb-btn" (click)="addWarehouse()">
-                  <mat-icon>add</mat-icon> Agregar bodega
-                </button>
-              }
-            </div>
-
-            @for (wRow of warehousesArray.controls; track $index; let i = $index) {
-              <div class="sub-table-row" [formGroup]="$any(wRow)">
-                @let selectedWarehouseId = $any(wRow).get('warehouseId')?.value;
-                @let warehouseLocations = getWarehouseLocations(selectedWarehouseId);
-                <mat-form-field appearance="outline">
-                  <mat-label>Bodega</mat-label>
-                  <mat-select
-                    formControlName="warehouseId"
-                    (selectionChange)="onWarehouseRowSelectionChange($any(wRow), $event.value)"
-                  >
-                    @for (w of warehouseService.warehouses.value() ?? []; track w.id) {
-                      <mat-option [value]="w.id">{{ w.name }}</mat-option>
-                    }
-                    @if (isEditing()) {
-                      <mat-option [value]="quickCreateOptionValue" class="qc-create-option">
-                        <mat-icon class="qc-icon">add_circle</mat-icon>
-                        Crear nueva bodega
-                      </mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Ubicación</mat-label>
-                  <mat-select
-                    formControlName="locationId"
-                    (selectionChange)="
-                      onWarehouseLocationRowSelectionChange($any(wRow), $event.value)
-                    "
-                  >
-                    <mat-option [value]="null">— Ninguna —</mat-option>
-                    @if (!selectedWarehouseId) {
-                      <mat-option disabled>Seleccioná una bodega primero</mat-option>
-                    } @else {
-                      @for (location of warehouseLocations; track location.id) {
-                        <mat-option [value]="location.id">
-                          {{ getWarehouseLocationLabel(location) }}
-                        </mat-option>
-                      }
-                      @if (warehouseLocations.length === 0) {
-                        <mat-option disabled>No hay ubicaciones registradas</mat-option>
-                      }
-                      @if (isEditing()) {
-                        <mat-option [value]="quickCreateOptionValue" class="qc-create-option">
-                          <mat-icon class="qc-icon">add_circle</mat-icon>
-                          Crear nueva ubicación
-                        </mat-option>
-                      }
-                    }
-                  </mat-select>
-                </mat-form-field>
+              <div class="classification-grid classification-grid--three">
                 <mat-form-field appearance="outline">
                   <mat-label>Unidad de medida</mat-label>
-                  <mat-select
-                    formControlName="unitOfMeasureId"
-                    (selectionChange)="onWarehouseUomRowSelectionChange($any(wRow), $event.value)"
+                  <input
+                    matInput
+                    [formControl]="uomDisplay"
+                    [matAutocomplete]="autoUom"
+                    (input)="uomFilter.set($any($event.target).value)"
+                    (blur)="syncUomDisplay()"
+                    autocomplete="off"
+                  />
+                  <mat-autocomplete
+                    #autoUom="matAutocomplete"
+                    (optionSelected)="onUomSelected($event)"
                   >
-                    <mat-option [value]="null">— Ninguna —</mat-option>
-                    @for (u of uomService.units.value() ?? []; track u.id) {
-                      <mat-option [value]="u.id">{{ u.code }}</mat-option>
+                    @for (u of filteredUoms(); track u.id) {
+                      <mat-option [value]="u.id">{{ u.code }} — {{ u.name }}</mat-option>
                     }
                     @if (isEditing()) {
-                      <mat-option [value]="quickCreateOptionValue" class="qc-create-option">
+                      <mat-option value="__create__" class="qc-create-option">
                         <mat-icon class="qc-icon">add_circle</mat-icon>
-                        Crear nueva U.M.
+                        Crear{{ uomFilter() ? ' "' + uomFilter() + '"' : ' nueva U.M.' }}
                       </mat-option>
                     }
-                  </mat-select>
+                  </mat-autocomplete>
                 </mat-form-field>
-                <mat-checkbox formControlName="isDefault">Predeterminada</mat-checkbox>
-                @if (isEditing()) {
-                  <button
-                    mat-icon-button
-                    color="warn"
-                    (click)="removeWarehouse(i)"
-                    matTooltip="Eliminar"
-                  >
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                }
-              </div>
-            }
 
-            @if (warehousesArray.length === 0) {
-              <p style="text-align: center; color: #94a3b8; font-size: 12px; padding: 24px 0">
-                Sin bodegas asignadas
-              </p>
-            }
-          </div>
+                <mat-form-field appearance="outline">
+                  <mat-label>Marca</mat-label>
+                  <input
+                    matInput
+                    [formControl]="brandDisplay"
+                    [matAutocomplete]="autoBrand"
+                    (input)="brandFilter.set($any($event.target).value)"
+                    (blur)="syncBrandDisplay()"
+                    autocomplete="off"
+                  />
+                  <mat-autocomplete
+                    #autoBrand="matAutocomplete"
+                    (optionSelected)="onBrandSelected($event)"
+                  >
+                    @for (b of filteredBrands(); track b.id) {
+                      <mat-option [value]="b.id">{{ b.name }}</mat-option>
+                    }
+                    @if (isEditing()) {
+                      <mat-option value="__create__" class="qc-create-option">
+                        <mat-icon class="qc-icon">add_circle</mat-icon>
+                        Crear{{ brandFilter() ? ' "' + brandFilter() + '"' : ' nueva marca' }}
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Modelo</mat-label>
+                  <input
+                    matInput
+                    [formControl]="modelDisplay"
+                    [matAutocomplete]="autoModel"
+                    (input)="modelFilter.set($any($event.target).value)"
+                    (blur)="syncModelDisplay()"
+                    autocomplete="off"
+                  />
+                  <mat-autocomplete
+                    #autoModel="matAutocomplete"
+                    (optionSelected)="onModelSelected($event)"
+                  >
+                    @for (m of filteredModels(); track m.id) {
+                      <mat-option [value]="m.id">{{ m.name }}</mat-option>
+                    }
+                    @if (isEditing()) {
+                      <mat-option value="__create__" class="qc-create-option">
+                        <mat-icon class="qc-icon">add_circle</mat-icon>
+                        Crear{{ modelFilter() ? ' "' + modelFilter() + '"' : ' nuevo modelo' }}
+                      </mat-option>
+                    }
+                  </mat-autocomplete>
+                </mat-form-field>
+              </div>
+            </ng-container>
+
+            <!-- Price entries projected into card 4 slot -->
+            <ng-container priceEntries>
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Buscar lista de precio</mat-label>
+                <input
+                  matInput
+                  [formControl]="priceListSearch"
+                  [matAutocomplete]="autoPriceList"
+                  (input)="priceListFilter.set($any($event.target).value)"
+                  autocomplete="off"
+                />
+                <mat-autocomplete
+                  #autoPriceList="matAutocomplete"
+                  (optionSelected)="onPriceListSelected($event)"
+                >
+                  @for (priceList of filteredAvailablePriceLists(); track priceList.id) {
+                    <mat-option [value]="priceList.id">{{ priceList.name }}</mat-option>
+                  }
+                  @if (filteredAvailablePriceLists().length === 0) {
+                    <mat-option disabled>No hay listas disponibles para agregar.</mat-option>
+                  }
+                </mat-autocomplete>
+              </mat-form-field>
+
+              @if (priceEntriesArray.length === 0) {
+                <p class="sub-table-empty">Todavía no agregaste listas de precios.</p>
+              } @else {
+                @for (
+                  entryRow of priceEntriesArray.controls;
+                  let index = $index;
+                  track entryRow.get('priceListId')?.value
+                ) {
+                  <div class="sub-table-row price-entry-row" [formGroup]="$any(entryRow)">
+                    <mat-form-field appearance="outline" class="price-entry-list-name">
+                      <mat-label>Lista</mat-label>
+                      <input matInput formControlName="priceListName" readonly />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>P.Venta</mat-label>
+                      <span matPrefix>$&nbsp;</span>
+                      <input matInput type="number" formControlName="price" min="0" />
+                      <mat-error>Ingresá un precio válido.</mat-error>
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>% Utilidad</mat-label>
+                      <input
+                        matInput
+                        type="number"
+                        formControlName="profitMargin"
+                        (input)="recalculatePriceEntryPrice($any(entryRow))"
+                        min="0"
+                        max="100"
+                      />
+                      <span matSuffix>%</span>
+                      <mat-error>Ingresá un porcentaje entre 0 y 100.</mat-error>
+                    </mat-form-field>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      color="warn"
+                      matTooltip="Eliminar lista"
+                      [disabled]="priceEntriesArray.disabled"
+                      (click)="removePriceEntry(index)"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                }
+              }
+            </ng-container>
+            <!-- Sidebar: product-summary -->
+            <app-product-summary
+              [code]="summaryCode()"
+              [name]="summaryName()"
+              [category]="summaryCategory()"
+              [uom]="summaryUom()"
+              [cost]="summaryCost()"
+              [margin]="summaryMargin()"
+              [salePrice]="summarySalePrice()"
+              [tax]="summaryTax()"
+              [stock]="summaryStock()"
+            />
+          </app-product-general>
         </mat-tab>
 
-        <!-- ══ TAB 3 — CONTABILIZACIÓN ════════════════════════════════ -->
-        <mat-tab label="Contabilización">
-          <div class="tab-content">
-            <p class="section-title">CUENTAS CONTABLES</p>
+        <!-- ══ TAB 2 — INVENTARIO Y LOTES ═════════════════════════════ -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>layers</mat-icon>
+            Inventario y Lotes
+          </ng-template>
+          <app-product-inventory
+            [form]="form"
+            [warehousesArray]="warehousesArray"
+            [warehouseList]="warehouseService.warehouses.value() ?? []"
+            [isEditing]="isEditing()"
+            (addWarehouse)="addWarehouse()"
+            (removeWarehouse)="removeWarehouse($event)"
+          />
+        </mat-tab>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Cuenta de ingresos (Clase 4)</mat-label>
-              <mat-select formControlName="incomeAccountId">
-                <mat-option [value]="null">— Ninguna —</mat-option>
-                @for (a of pucService.incomeAccounts.value() ?? []; track a.id) {
-                  <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Cuenta de inventario (Clase 1)</mat-label>
-              <mat-select formControlName="inventoryAccountId">
-                <mat-option [value]="null">— Ninguna —</mat-option>
-                @for (a of pucService.inventoryAccounts.value() ?? []; track a.id) {
-                  <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Cuenta de costo de ventas (Clase 6)</mat-label>
-              <mat-select formControlName="costOfSalesAcctId">
-                <mat-option [value]="null">— Ninguna —</mat-option>
-                @for (a of pucService.costAccounts.value() ?? []; track a.id) {
-                  <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-
-            <mat-divider></mat-divider>
-            <p class="section-title">PLANTILLA CONTABLE</p>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Plantilla contable</mat-label>
-              <mat-select formControlName="accountingTemplateId">
-                <mat-option [value]="null">— Ninguna —</mat-option>
-                @for (tpl of templateService.templates.value() ?? []; track tpl.id) {
-                  <mat-option [value]="tpl.id"> {{ tpl.code }} — {{ tpl.name }} </mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            @if (form.get('accountingTemplateId')?.value; as selectedTemplateId) {
-              @let selectedTemplate = templateLabel(selectedTemplateId);
-              @if (selectedTemplate) {
-                <p class="template-selected-info">
-                  <mat-icon>account_tree</mat-icon>
-                  {{ selectedTemplate }}
-                </p>
-              }
-            }
-          </div>
+        <!-- ══ TAB 3 — CONTABILIZACIÓN ═══════════════════════════════ -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>account_balance</mat-icon>
+            Contabilización
+          </ng-template>
+          <app-product-accounting
+            [form]="form"
+            [incomeAccounts]="pucService.incomeAccounts.value() ?? []"
+            [inventoryAccounts]="pucService.inventoryAccounts.value() ?? []"
+            [costAccounts]="pucService.costAccounts.value() ?? []"
+            [templates]="templateService.templates.value() ?? []"
+          />
         </mat-tab>
 
         <!-- ══ TAB 4 — PROVEEDORES ════════════════════════════════════ -->
-        <mat-tab label="Proveedores">
-          <div class="tab-content">
-            <div class="sub-table-header">
-              <p class="section-title" style="margin: 0">PROVEEDORES DEL ARTÍCULO</p>
-              @if (isEditing()) {
-                <button class="tb-btn" (click)="addSupplier()">
-                  <mat-icon>add</mat-icon> Agregar proveedor
-                </button>
-              }
-            </div>
-
-            @for (sRow of suppliersArray.controls; track $index; let i = $index) {
-              <div class="sub-table-row" [formGroup]="$any(sRow)">
-                <mat-form-field appearance="outline">
-                  <mat-label>Proveedor</mat-label>
-                  <mat-select
-                    formControlName="supplierId"
-                    (selectionChange)="onSupplierRowSelectionChange($any(sRow), $event.value)"
-                  >
-                    @if (
-                      supplierOptionsById().get($any(sRow).get('supplierId')?.value ?? '');
-                      as currentSupplier
-                    ) {
-                      <mat-select-trigger>{{
-                        supplierOptionLabel(currentSupplier)
-                      }}</mat-select-trigger>
-                    }
-                    @if (thirdPartyService.supplierOptions.isLoading()) {
-                      <mat-option disabled>Cargando proveedores...</mat-option>
-                    }
-                    @for (supplier of supplierOptions(); track supplier.id) {
-                      <mat-option [value]="supplier.id">
-                        {{ supplierOptionLabel(supplier) }}
-                      </mat-option>
-                    }
-                    @if (
-                      !thirdPartyService.supplierOptions.isLoading() &&
-                      supplierOptions().length === 0
-                    ) {
-                      <mat-option disabled>No hay proveedores disponibles</mat-option>
-                    }
-                    @if (isEditing()) {
-                      <mat-option [value]="quickCreateOptionValue" class="qc-create-option">
-                        <mat-icon class="qc-icon">add_circle</mat-icon>
-                        Crear nuevo proveedor
-                      </mat-option>
-                    }
-                  </mat-select>
-                </mat-form-field>
-                <mat-form-field appearance="outline">
-                  <mat-label>Referencia proveedor</mat-label>
-                  <input matInput formControlName="supplierReference" />
-                </mat-form-field>
-                <mat-form-field appearance="outline" style="max-width: 160px">
-                  <mat-label>Costo unitario</mat-label>
-                  <span matPrefix>$&nbsp;</span>
-                  <input matInput type="number" formControlName="unitCost" min="0" />
-                </mat-form-field>
-                <mat-checkbox formControlName="isMain">Principal</mat-checkbox>
-                @if (isEditing()) {
-                  <button
-                    mat-icon-button
-                    color="warn"
-                    (click)="removeSupplier(i)"
-                    matTooltip="Eliminar"
-                  >
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                }
-              </div>
-            }
-
-            @if (suppliersArray.length === 0) {
-              <p style="text-align: center; color: #94a3b8; font-size: 12px; padding: 24px 0">
-                Sin proveedores asignados
-              </p>
-            }
-          </div>
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>local_shipping</mat-icon>
+            Proveedores
+          </ng-template>
+          <app-product-suppliers
+            [suppliersArray]="suppliersArray"
+            [supplierList]="safeSupplierOptions()"
+            [isEditing]="isEditing()"
+            (addSupplier)="addSupplier()"
+            (removeSupplier)="removeSupplier($event)"
+          />
         </mat-tab>
 
-        <!-- ══ TAB 4 — PRESENTACIONES ═════════════════════════════════ -->
-        @if (showPresentationsTab()) {
-          <mat-tab label="Presentaciones">
-            <div class="tab-content">
-              <app-presentations-tab [productId]="loadedId()!" />
-            </div>
-          </mat-tab>
-        }
-
-        <!-- ══ TAB — FÓRMULA ════════════════════════════════════════ -->
-        @if (showFormulaTab()) {
-          <mat-tab label="Fórmula">
-            <div class="tab-content">
-              <app-formula-tab [productId]="loadedId()!" />
-            </div>
-          </mat-tab>
-        }
-
-        <!-- ══ TAB 5 — ESPECIFICACIONES ══════════════════════════════ -->
-        <mat-tab label="Especificaciones">
+        <!-- ══ TAB 5 — ESPECIFICACIONES ═══════════════════════════════ -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>extension</mat-icon>
+            Especificaciones
+          </ng-template>
           <div class="tab-content">
             <p class="section-title">DATOS TÉCNICOS</p>
 
@@ -746,10 +567,22 @@
               <textarea matInput formControlName="specifications" rows="6"></textarea>
             </mat-form-field>
           </div>
+
+          @if (showPresentationsTab()) {
+            <app-presentations-tab [productId]="loadedId()!" [formArray]="presentationsFormArray" />
+          }
+
+          @if (showFormulaTab()) {
+            <app-formula-tab [productId]="loadedId()!" [formArray]="formulasFormArray" />
+          }
         </mat-tab>
 
         <!-- ══ TAB 6 — IMÁGENES ═══════════════════════════════════════ -->
-        <mat-tab label="Imágenes">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>image</mat-icon>
+            Imágenes
+          </ng-template>
           <div class="tab-content">
             <div class="sub-table-header">
               <p class="section-title" style="margin: 0">IMÁGENES DEL ARTÍCULO (MÁX. 4)</p>
@@ -834,7 +667,11 @@
         </mat-tab>
 
         <!-- ══ TAB 7 — PROMOCIONES ════════════════════════════════════ -->
-        <mat-tab label="Promociones">
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>star_border</mat-icon>
+            Promociones
+          </ng-template>
           <div class="tab-content">
             <div class="sub-table-header">
               <p class="section-title" style="margin: 0">PROMOCIONES DEL ARTÍCULO</p>

@@ -1,7 +1,7 @@
 <div class="pres-tab">
   <div class="sub-table-header">
     <p class="section-title">PRESENTACIONES DEL PRODUCTO</p>
-    @if (!adding() && !editingRow()) {
+    @if (!adding() && editingIndex() === null) {
       <button class="tb-btn" (click)="startAdd()">
         <mat-icon>add</mat-icon> Agregar presentación
       </button>
@@ -14,32 +14,39 @@
 
   <!-- Add new row -->
   @if (adding()) {
-    <div class="pres-edit-row">
+    @let addGroup = formArray.at(formArray.length - 1);
+    <div class="pres-edit-row" [formGroup]="$any(addGroup)">
       <mat-form-field appearance="outline" class="pres-field-sm">
         <mat-label>Código</mat-label>
-        <input matInput [(ngModel)]="editCode" maxlength="20" />
+        <input matInput formControlName="code" maxlength="20" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="pres-field-md">
         <mat-label>Nombre</mat-label>
-        <input matInput [(ngModel)]="editName" maxlength="100" />
+        <input matInput formControlName="name" maxlength="100" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="pres-field-md">
         <mat-label>Unidad de medida</mat-label>
-        <mat-select [(ngModel)]="editUomId">
-          @for (u of uomService.units.value() ?? []; track u.id) {
+        <mat-select formControlName="unitOfMeasureId">
+          @for (u of units(); track u.id) {
             <mat-option [value]="u.id">{{ u.code }} — {{ u.name }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="pres-field-sm">
         <mat-label>Factor conv.</mat-label>
-        <input matInput type="number" [(ngModel)]="editFactor" min="0.0001" step="0.0001" />
+        <input
+          matInput
+          type="number"
+          formControlName="conversionFactor"
+          min="0.0001"
+          step="0.0001"
+        />
       </mat-form-field>
       <mat-form-field appearance="outline" class="pres-field-sm">
         <mat-label>P.Venta</mat-label>
-        <input matInput type="number" [(ngModel)]="editPrice" min="0" />
+        <input matInput type="number" formControlName="salePrice" min="0" />
       </mat-form-field>
-      <mat-checkbox [(ngModel)]="editIsDefault">Predet.</mat-checkbox>
+      <mat-checkbox formControlName="isDefault">Predet.</mat-checkbox>
       <button mat-icon-button color="primary" (click)="saveNew()" matTooltip="Guardar">
         <mat-icon>check</mat-icon>
       </button>
@@ -49,7 +56,7 @@
     </div>
   }
 
-  @if (presentations().length === 0 && !adding()) {
+  @if (formArray.length === 0 && !adding()) {
     <p class="sub-table-empty">Sin presentaciones definidas</p>
   } @else {
     <table class="pres-table">
@@ -65,24 +72,24 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of presentations(); track row.id) {
-          @if (editingRow()?.id === row.id) {
+        @for (group of formArray.controls; track $index; let i = $index) {
+          @if (editingIndex() === i) {
             <!-- Edit row -->
-            <tr>
+            <tr [formGroup]="$any(group)">
               <td>
                 <mat-form-field appearance="outline" class="pres-inline-field">
-                  <input matInput [(ngModel)]="editCode" maxlength="20" />
+                  <input matInput formControlName="code" maxlength="20" />
                 </mat-form-field>
               </td>
               <td>
                 <mat-form-field appearance="outline" class="pres-inline-field">
-                  <input matInput [(ngModel)]="editName" maxlength="100" />
+                  <input matInput formControlName="name" maxlength="100" />
                 </mat-form-field>
               </td>
               <td>
                 <mat-form-field appearance="outline" class="pres-inline-field">
-                  <mat-select [(ngModel)]="editUomId">
-                    @for (u of uomService.units.value() ?? []; track u.id) {
+                  <mat-select formControlName="unitOfMeasureId">
+                    @for (u of units(); track u.id) {
                       <mat-option [value]="u.id">{{ u.code }}</mat-option>
                     }
                   </mat-select>
@@ -93,7 +100,7 @@
                   <input
                     matInput
                     type="number"
-                    [(ngModel)]="editFactor"
+                    formControlName="conversionFactor"
                     min="0.0001"
                     step="0.0001"
                   />
@@ -101,15 +108,15 @@
               </td>
               <td>
                 <mat-form-field appearance="outline" class="pres-inline-field">
-                  <input matInput type="number" [(ngModel)]="editPrice" min="0" />
+                  <input matInput type="number" formControlName="salePrice" min="0" />
                 </mat-form-field>
               </td>
-              <td><mat-checkbox [(ngModel)]="editIsDefault" /></td>
+              <td><mat-checkbox formControlName="isDefault" /></td>
               <td class="pres-actions">
                 <button
                   mat-icon-button
                   color="primary"
-                  (click)="saveEdit(row)"
+                  (click)="saveEdit($any(group))"
                   matTooltip="Guardar"
                 >
                   <mat-icon>check</mat-icon>
@@ -122,18 +129,20 @@
           } @else {
             <!-- View row -->
             <tr>
-              <td>{{ row.code }}</td>
-              <td>{{ row.name }}</td>
-              <td>{{ row.unitOfMeasureName }}</td>
-              <td class="pres-num">{{ row.conversionFactor }}</td>
-              <td class="pres-num">{{ row.salePrice | number: '1.0-4' }}</td>
+              <td>{{ $any(group).get('code')?.value }}</td>
+              <td>{{ $any(group).get('name')?.value }}</td>
               <td>
-                @if (row.isDefault) {
+                {{ units().find(u => u.id === $any(group).get('unitOfMeasureId')?.value)?.code ?? $any(group).get('unitOfMeasureId')?.value }}
+              </td>
+              <td class="pres-num">{{ $any(group).get('conversionFactor')?.value }}</td>
+              <td class="pres-num">{{ $any(group).get('salePrice')?.value | number: '1.0-4' }}</td>
+              <td>
+                @if ($any(group).get('isDefault')?.value) {
                   <mat-icon class="pres-default-icon">star</mat-icon>
                 } @else {
                   <button
                     mat-icon-button
-                    (click)="setAsDefault(row)"
+                    (click)="setAsDefault(i)"
                     matTooltip="Marcar como predeterminada"
                     class="pres-set-default-btn"
                   >
@@ -142,13 +151,13 @@
                 }
               </td>
               <td class="pres-actions">
-                <button mat-icon-button (click)="startEdit(row)" matTooltip="Editar">
+                <button mat-icon-button (click)="startEdit(i)" matTooltip="Editar">
                   <mat-icon>edit</mat-icon>
                 </button>
                 <button
                   mat-icon-button
                   color="warn"
-                  (click)="deletePresentation(row)"
+                  (click)="deletePresentation(i)"
                   matTooltip="Eliminar"
                 >
                   <mat-icon>delete</mat-icon>

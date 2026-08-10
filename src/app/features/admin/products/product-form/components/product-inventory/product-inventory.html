@@ -1,0 +1,117 @@
+<ng-container [formGroup]="form">
+  <!-- ══ CARD: CONTROL DE INVENTARIO ════════════════════════════════ -->
+  <div class="pi-card">
+    <div class="pi-card__header pi-card__header--red">
+      <div class="pi-card__icon pi-card__icon--red">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <div class="pi-card__header-text">
+        <h3 class="pi-card__title">Control de inventario</h3>
+        <p class="pi-card__desc">Método de costeo, stocks y configuración de inventario</p>
+      </div>
+    </div>
+    <mat-divider />
+    <div class="pi-card__body">
+      <mat-form-field appearance="outline" class="pi-full-width">
+        <mat-label>Método de costeo</mat-label>
+        <mat-select formControlName="costingMethod">
+          @for (opt of costingOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="pi-form-grid pi-form-grid--4">
+        <mat-form-field appearance="outline">
+          <mat-label>Stock inicial</mat-label>
+          <input matInput type="number" formControlName="initialStock" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Stock mínimo</mat-label>
+          <input matInput type="number" formControlName="minStock" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Stock máximo</mat-label>
+          <input matInput type="number" formControlName="maxStock" min="0" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Existencia</mat-label>
+          <input matInput type="number" formControlName="totalStock" />
+          <mat-icon matSuffix>inventory</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="pi-checkboxes-grid">
+        @for (cb of checkboxes; track cb.controlName) {
+          <div class="pi-checkbox-item">
+            <mat-checkbox [formControlName]="cb.controlName">{{ cb.label }}</mat-checkbox>
+            <p class="pi-checkbox-helper">{{ cb.helper }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ WAREHOUSE TABLE ═════════════════════════════════════════════ -->
+  <div class="pi-card">
+    <div class="pi-card__header pi-card__header--blue">
+      <div class="pi-card__icon pi-card__icon--blue">
+        <mat-icon>warehouse</mat-icon>
+      </div>
+      <div class="pi-card__header-text">
+        <h3 class="pi-card__title">Bodegas asignadas</h3>
+        <p class="pi-card__desc">Asignación de bodegas y ubicaciones</p>
+      </div>
+    </div>
+    <mat-divider />
+    <div class="pi-card__body">
+      @if (isEditing) {
+        <div class="pi-wh-header">
+          <button class="pi-add-warehouse-btn" mat-stroked-button (click)="addWarehouse.emit()">
+            <mat-icon>add</mat-icon> Agregar bodega
+          </button>
+        </div>
+      }
+
+      @for (wRow of warehousesArray.controls; track $index; let i = $index) {
+        <div class="pi-warehouse-row" [formGroup]="$any(wRow)">
+          <mat-form-field appearance="outline">
+            <mat-label>Bodega</mat-label>
+            <mat-select formControlName="warehouseId">
+              @for (w of warehouseList; track w.id) {
+                <mat-option [value]="w.id">{{ w.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Ubicación</mat-label>
+            <mat-select formControlName="locationId">
+              <mat-option [value]="null">— Ninguna —</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Unidad de medida</mat-label>
+            <mat-select formControlName="unitOfMeasureId">
+              <mat-option [value]="null">— Ninguna —</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-checkbox formControlName="isDefault">Predeterminada</mat-checkbox>
+          @if (isEditing) {
+            <button
+              mat-icon-button
+              color="warn"
+              (click)="removeWarehouse.emit(i)"
+              matTooltip="Eliminar"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
+        </div>
+      }
+
+      @if (warehousesArray.length === 0) {
+        <p class="pi-warehouse-empty">Sin bodegas asignadas</p>
+      }
+    </div>
+  </div>
+</ng-container>

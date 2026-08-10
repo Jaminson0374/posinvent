@@ -1,0 +1,14 @@
+<nav class="sn-nav overflow-x-auto">
+  @for (section of sections; track section.sectionId) {
+    <button
+      matRipple
+      class="sn-item"
+      [class.sn-item--active]="section.sectionId === activeSection"
+      [attr.aria-current]="section.sectionId === activeSection ? 'page' : undefined"
+      (click)="onItemClick(section.sectionId)"
+    >
+      <mat-icon class="sn-item__icon">{{ section.icon }}</mat-icon>
+      <span class="sn-item__label">{{ section.label }}</span>
+    </button>
+  }
+</nav>

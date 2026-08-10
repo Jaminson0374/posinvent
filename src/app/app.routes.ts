@@ -794,12 +794,12 @@ export const routes: Routes = [
           {
             path: 'puc/nuevo',
             loadComponent: () =>
-              import('./features/admin/puc/puc-form').then((m) => m.PucFormComponent),
+              import('./features/admin/puc/puc-list').then((m) => m.PucListComponent),
           },
           {
             path: 'puc/:id',
             loadComponent: () =>
-              import('./features/admin/puc/puc-form').then((m) => m.PucFormComponent),
+              import('./features/admin/puc/puc-list').then((m) => m.PucListComponent),
           },
           {
             path: 'precios',

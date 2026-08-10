@@ -1,0 +1,136 @@
+<!-- ══ Product Summary Sidebar ═══════════════════════════════════════ -->
+<div class="ps-card">
+  <!-- Header -->
+  <div class="ps-card__header">
+    <div class="ps-card__icon">
+      <mat-icon>summarize</mat-icon>
+    </div>
+    <div class="ps-card__header-text">
+      <h3 class="ps-card__title">Resumen del artículo</h3>
+      <p class="ps-card__desc">Vista previa de los datos ingresados</p>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <hr class="ps-divider" />
+
+  <!-- Incomplete badge -->
+  @if (hasIncompleteFields) {
+    <div class="ps-badge">
+      <mat-icon class="ps-badge__icon">warning</mat-icon>
+      <span class="ps-badge__text">Datos incompletos</span>
+      <span class="ps-badge__count">{{ incompleteCount }}</span>
+    </div>
+  }
+
+  <!-- Field rows -->
+  <div class="ps-body">
+    <!-- Code -->
+    <div class="ps-row">
+      <div class="ps-row__icon">
+        <mat-icon>tag</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">Código</span>
+        <span class="ps-row__value">{{ displayText(code) }}</span>
+      </div>
+    </div>
+
+    <!-- Name -->
+    <div class="ps-row">
+      <div class="ps-row__icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">Nombre</span>
+        <span class="ps-row__value">{{ displayText(name) }}</span>
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div class="ps-row">
+      <div class="ps-row__icon">
+        <mat-icon>category</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">Categoría</span>
+        <span class="ps-row__value">{{ displayText(category) }}</span>
+      </div>
+    </div>
+
+    <!-- UoM -->
+    <div class="ps-row">
+      <div class="ps-row__icon">
+        <mat-icon>straighten</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">U. Medida</span>
+        <span class="ps-row__value">{{ displayText(uom) }}</span>
+      </div>
+    </div>
+
+    <!-- Divider before financials -->
+    <hr class="ps-section-divider" />
+
+    <!-- Cost -->
+    <div class="ps-row">
+      <div class="ps-row__icon ps-row__icon--amber">
+        <mat-icon>attach_money</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">Costo</span>
+        <span class="ps-row__value ps-row__value--mono">{{ formatCurrency(cost) }}</span>
+      </div>
+    </div>
+
+    <!-- Margin -->
+    <div class="ps-row">
+      <div class="ps-row__icon ps-row__icon--green">
+        <mat-icon>trending_up</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">% Utilidad</span>
+        <span class="ps-row__value ps-row__value--mono">{{ formatPercent(margin) }}</span>
+      </div>
+    </div>
+
+    <!-- Sale Price -->
+    <div class="ps-row ps-row--highlight">
+      <div class="ps-row__icon ps-row__icon--blue">
+        <mat-icon>sell</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">P. Venta</span>
+        <span class="ps-row__value ps-row__value--bold">{{ formatCurrency(salePrice) }}</span>
+      </div>
+    </div>
+
+    <!-- Tax -->
+    <div class="ps-row">
+      <div class="ps-row__icon">
+        <mat-icon>receipt</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">Impuesto</span>
+        <span class="ps-row__value">{{ formatTax(tax) }}</span>
+      </div>
+    </div>
+
+    <!-- Stock -->
+    <div class="ps-row">
+      <div class="ps-row__icon ps-row__icon--purple">
+        <mat-icon>inventory</mat-icon>
+      </div>
+      <div class="ps-row__content">
+        <span class="ps-row__label">Existencia</span>
+        <span class="ps-row__value ps-row__value--mono">{{ formatStock(stock) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help text -->
+  <div class="ps-help">
+    <mat-icon class="ps-help__icon">info</mat-icon>
+    <p class="ps-help__text">Complete todos los campos obligatorios antes de guardar</p>
+  </div>
+</div>

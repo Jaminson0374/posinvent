@@ -64,6 +64,7 @@ export interface PucAccount {
   accountNature: string;
   allowsTransactions: boolean;
   active: boolean;
+  updatedAt?: string;
 }
 
 export interface WarehouseLocation {

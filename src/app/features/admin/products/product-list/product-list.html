@@ -16,11 +16,7 @@
     <div class="page-actions">
       <mat-form-field appearance="outline" class="search-field">
         <mat-icon matPrefix class="search-icon">search</mat-icon>
-        <input
-          matInput
-          [formControl]="searchControl"
-          placeholder="Código, barras o nombre..."
-        />
+        <input matInput [formControl]="searchControl" placeholder="Código, barras o nombre..." />
       </mat-form-field>
 
       <div class="filter-popover-wrap">
@@ -62,9 +58,7 @@
                 <button
                   type="button"
                   class="filter-option"
-                  [class.filter-option-active]="
-                    selectedFilters().includes(filterOption.value)
-                  "
+                  [class.filter-option-active]="selectedFilters().includes(filterOption.value)"
                   (click)="toggleFilterValue(filterOption.value)"
                 >
                   <span>{{ filterOption.label }}</span>
@@ -116,7 +110,7 @@
 
   @if (pageData) {
     <mat-card class="table-card" appearance="outlined">
-      @if (filteredRows().length > 0) {
+      @if (pageData.content.length > 0) {
         <div class="table-toolbar">
           <div class="toolbar-view-toggle" aria-label="Vista de tabla">
             <button
@@ -144,7 +138,7 @@
 
         @if (viewMode() === 'list') {
           <div class="table-container">
-            <mat-table [dataSource]="filteredRows()" class="product-table">
+            <mat-table [dataSource]="pageData.content" class="product-table">
               <ng-container matColumnDef="index">
                 <mat-header-cell *matHeaderCellDef class="col-index">#</mat-header-cell>
                 <mat-cell *matCellDef="let row; let i = index" class="col-index">
@@ -267,7 +261,7 @@
           </div>
         } @else {
           <div class="card-grid">
-            @for (row of filteredRows(); track row.id) {
+            @for (row of pageData.content; track row.id) {
               <mat-card class="product-card" appearance="outlined">
                 <div class="product-card-head">
                   <div class="product-avatar product-avatar-lg">

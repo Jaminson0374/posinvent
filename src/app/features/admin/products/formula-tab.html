@@ -2,7 +2,7 @@
   <div class="sub-table-header">
     <p class="section-title">COMPONENTES DE FÓRMULA</p>
     <div class="sub-table-header-actions">
-      @if (!adding() && !editingId()) {
+      @if (!adding() && editingIndex() === null) {
         <button class="tb-btn" (click)="startAdd()">
           <mat-icon>add</mat-icon> Agregar componente
         </button>
@@ -18,11 +18,17 @@
   }
 
   @if (adding()) {
-    <div class="formula-edit-row">
+    @let addGroup = formArray.at(formArray.length - 1);
+    <div class="formula-edit-row" [formGroup]="$any(addGroup)">
       <div>
         <mat-form-field appearance="outline" class="formula-field-lg">
           <mat-label>Buscar componente</mat-label>
-          <input matInput [(ngModel)]="componentSearch" (input)="searchComponents()" />
+          <input
+            matInput
+            [ngModel]="componentSearch()"
+            (input)="componentSearch.set($any($event.target).value); searchComponents()"
+            [ngModelOptions]="{ standalone: true }"
+          />
         </mat-form-field>
         @if (componentSearchLoading()) {
           <mat-spinner diameter="16" />
@@ -35,20 +41,20 @@
       </div>
       <mat-form-field appearance="outline" class="formula-field-sm">
         <mat-label>Cantidad</mat-label>
-        <input matInput type="number" [(ngModel)]="editQuantity" min="0.0001" step="0.0001" />
+        <input matInput type="number" formControlName="quantity" min="0.0001" step="0.0001" />
       </mat-form-field>
       <mat-form-field appearance="outline" class="formula-field-md">
         <mat-label>U.M.</mat-label>
-        <mat-select [(ngModel)]="editUomId">
+        <mat-select formControlName="unitOfMeasureId">
           <mat-option [value]="null">— Ninguna —</mat-option>
-          @for (u of uomService.units.value() ?? []; track u.id) {
+          @for (u of units(); track u.id) {
             <mat-option [value]="u.id">{{ u.code }}</mat-option>
           }
         </mat-select>
       </mat-form-field>
       <mat-form-field appearance="outline" class="formula-field-sm">
         <mat-label>Orden</mat-label>
-        <input matInput type="number" [(ngModel)]="editSeq" min="0" />
+        <input matInput type="number" formControlName="sequenceNumber" min="0" />
       </mat-form-field>
       <button mat-icon-button color="primary" (click)="saveNew()" matTooltip="Guardar">
         <mat-icon>check</mat-icon>
@@ -59,7 +65,7 @@
     </div>
   }
 
-  @if (formulas().length === 0 && !adding()) {
+  @if (formArray.length === 0 && !adding()) {
     <p class="sub-table-empty">Sin componentes definidos en la fórmula</p>
   } @else {
     <table class="formula-table">
@@ -74,16 +80,20 @@
         </tr>
       </thead>
       <tbody>
-        @for (row of formulas(); track row.id) {
-          @if (editingId() === row.id) {
-            <tr>
-              <td>{{ row.componentProductId }}</td>
+        @for (group of formArray.controls; track $index; let i = $index) {
+          @if (editingIndex() === i) {
+            <tr [formGroup]="$any(group)">
+              <td>
+                <span [matTooltip]="$any(group).get('componentProductId')?.value">
+                  {{ getComponentName($any(group).get('componentProductId')?.value) }}
+                </span>
+              </td>
               <td>
                 <mat-form-field appearance="outline" class="formula-inline">
                   <input
                     matInput
                     type="number"
-                    [(ngModel)]="editQuantity"
+                    formControlName="quantity"
                     min="0.0001"
                     step="0.0001"
                   />
@@ -91,9 +101,9 @@
               </td>
               <td>
                 <mat-form-field appearance="outline" class="formula-inline">
-                  <mat-select [(ngModel)]="editUomId">
+                  <mat-select formControlName="unitOfMeasureId">
                     <mat-option [value]="null">—</mat-option>
-                    @for (u of uomService.units.value() ?? []; track u.id) {
+                    @for (u of units(); track u.id) {
                       <mat-option [value]="u.id">{{ u.code }}</mat-option>
                     }
                   </mat-select>
@@ -101,19 +111,19 @@
               </td>
               <td>
                 <mat-form-field appearance="outline" class="formula-inline">
-                  <input matInput type="number" [(ngModel)]="editSeq" min="0" />
+                  <input matInput type="number" formControlName="sequenceNumber" min="0" />
                 </mat-form-field>
               </td>
               <td>
                 <mat-form-field appearance="outline" class="formula-inline">
-                  <input matInput [(ngModel)]="editNotes" />
+                  <input matInput formControlName="notes" />
                 </mat-form-field>
               </td>
               <td>
                 <button
                   mat-icon-button
                   color="primary"
-                  (click)="saveEdit(row)"
+                  (click)="saveEdit($any(group))"
                   matTooltip="Guardar"
                 >
                   <mat-icon>check</mat-icon>
@@ -125,19 +135,23 @@
             </tr>
           } @else {
             <tr>
-              <td>{{ row.componentProductId }}</td>
-              <td class="formula-num">{{ row.quantity }}</td>
-              <td>{{ row.unitOfMeasureId ?? '—' }}</td>
-              <td>{{ row.sequenceNumber }}</td>
-              <td>{{ row.notes ?? '' }}</td>
               <td>
-                <button mat-icon-button (click)="startEdit(row)" matTooltip="Editar">
+                <span [matTooltip]="$any(group).get('componentProductId')?.value">
+                  {{ getComponentName($any(group).get('componentProductId')?.value) }}
+                </span>
+              </td>
+              <td class="formula-num">{{ $any(group).get('quantity')?.value }}</td>
+              <td>{{ $any(group).get('unitOfMeasureId')?.value ?? '—' }}</td>
+              <td>{{ $any(group).get('sequenceNumber')?.value }}</td>
+              <td>{{ $any(group).get('notes')?.value ?? '' }}</td>
+              <td>
+                <button mat-icon-button (click)="startEdit(i)" matTooltip="Editar">
                   <mat-icon>edit</mat-icon>
                 </button>
                 <button
                   mat-icon-button
                   color="warn"
-                  (click)="removeFormula(row)"
+                  (click)="removeFormula(i)"
                   matTooltip="Eliminar"
                 >
                   <mat-icon>delete</mat-icon>

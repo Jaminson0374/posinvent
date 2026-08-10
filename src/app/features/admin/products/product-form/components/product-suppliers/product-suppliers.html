@@ -1,0 +1,59 @@
+<!-- ══ CARD: PROVEEDORES DEL ARTÍCULO ═══════════════════════════════ -->
+<div class="ps-card">
+  <div class="ps-card__header ps-card__header--orange">
+    <div class="ps-card__icon ps-card__icon--orange">
+      <mat-icon>local_shipping</mat-icon>
+    </div>
+    <div class="ps-card__header-text">
+      <h3 class="ps-card__title">Proveedores del artículo</h3>
+      <p class="ps-card__desc">Asignación de proveedores, referencias y costos unitarios</p>
+    </div>
+  </div>
+  <mat-divider />
+  <div class="ps-card__body">
+    @if (isEditing) {
+      <div class="ps-supplier-header">
+        <button class="ps-add-supplier-btn" mat-stroked-button (click)="addSupplier.emit()">
+          <mat-icon>add</mat-icon> Agregar proveedor
+        </button>
+      </div>
+    }
+
+    @for (sRow of suppliersArray.controls; track $index; let i = $index) {
+      <div class="ps-supplier-row" [formGroup]="$any(sRow)">
+        <mat-form-field appearance="outline">
+          <mat-label>Proveedor</mat-label>
+          <mat-select formControlName="supplierId">
+            @for (s of supplierList; track s.id) {
+              <mat-option [value]="s.id">{{ supplierLabel(s) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Referencia proveedor</mat-label>
+          <input matInput formControlName="supplierReference" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="ps-cost-field">
+          <mat-label>Costo unitario</mat-label>
+          <span matPrefix>$&nbsp;</span>
+          <input matInput type="number" formControlName="unitCost" min="0" />
+        </mat-form-field>
+        <mat-checkbox formControlName="isMain">Principal</mat-checkbox>
+        @if (isEditing) {
+          <button
+            mat-icon-button
+            color="warn"
+            (click)="removeSupplier.emit(i)"
+            matTooltip="Eliminar"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
+      </div>
+    }
+
+    @if (suppliersArray.length === 0) {
+      <p class="ps-supplier-empty">Sin proveedores asignados</p>
+    }
+  </div>
+</div>

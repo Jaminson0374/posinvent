@@ -1,7 +1,13 @@
-<div class="pl-page">
+<div class="pl-page" [class.pl-page-panel-open]="panelOpen()">
   <div class="pl-header">
-    <h2 class="pl-title">Catálogo PUC/NIIF</h2>
-    <button mat-flat-button color="primary" [routerLink]="['/administracion/puc/nuevo']">
+    <div class="pl-heading">
+      <div class="pl-heading-icon"><mat-icon>account_balance</mat-icon></div>
+      <div>
+        <h2 class="pl-title">Catálogo PUC/NIIF</h2>
+        <p class="pl-subtitle">Administra el Plan Único de Cuentas conforme a NIIF.</p>
+      </div>
+    </div>
+    <button mat-flat-button color="primary" (click)="openNew()">
       <mat-icon>add</mat-icon>
       Nueva cuenta
     </button>
@@ -13,127 +19,281 @@
       <input matInput [formControl]="searchControl" placeholder="Ej: 1105 o Caja" />
       <mat-icon matSuffix>search</mat-icon>
     </mat-form-field>
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="collapseAll()"
+      matTooltip="Contraer todos los niveles"
+    >
+      <mat-icon>unfold_less</mat-icon>
+      Contraer
+    </button>
+    <div class="pl-puc-info">
+      <mat-icon aria-hidden="true">info_outline</mat-icon>
+      <div>
+        <p class="pl-puc-info-title">
+          La codificación del Catálogo de Cuentas está estructurada sobre la base de los siguientes
+          niveles:
+        </p>
+        <dl class="pl-puc-levels">
+          <div>
+            <dt>Clase:</dt>
+            <dd>El primer dígito</dd>
+          </div>
+          <div>
+            <dt>Grupo:</dt>
+            <dd>Los dos primeros dígitos</dd>
+          </div>
+          <div>
+            <dt>Cuenta:</dt>
+            <dd>Los cuatro primeros dígitos</dd>
+          </div>
+          <div>
+            <dt>Subcuenta:</dt>
+            <dd>Los seis primeros dígitos</dd>
+          </div>
+        </dl>
+        <p class="pl-puc-info-note">
+          Las clases 1, 2 y 3 (<strong>Activo</strong>, <strong>Pasivo</strong>,
+          <strong>Patrimonio</strong>) corresponden al balance general; las clases 4, 5, 6 y 7
+          (<strong>Ingresos</strong>, <strong>Gastos</strong>, <strong>Costos de venta</strong>,
+          <strong>Costos de producción</strong>) al estado de resultados; y las clases 8 y 9
+          (<strong>Cuentas de orden deudoras</strong>, <strong>Cuentas de orden acreedoras</strong>)
+          a las cuentas de orden.
+        </p>
+      </div>
+    </div>
   </div>
 
-  @if (loading()) {
-    <div class="pl-loading">
-      <mat-spinner diameter="40" />
-    </div>
-  } @else if (error()) {
-    <p class="pl-error">{{ error() }}</p>
-  } @else if (flatRows().length === 0) {
-    <p class="pl-empty">No se encontraron cuentas PUC.</p>
-  } @else {
-    <table mat-table [dataSource]="flatRows()" class="pl-table">
-      <!-- Expand column -->
-      <ng-container matColumnDef="expand">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          @if (row.node.children.length > 0) {
-            <button mat-icon-button (click)="toggleExpand(row.node)" class="pl-expand-btn">
-              <mat-icon>{{ row.node.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
-            </button>
-          } @else {
-            <span class="pl-expand-placeholder"></span>
-          }
-        </td>
-      </ng-container>
+  <div class="pl-content" [class.pl-content-with-panel]="panelOpen()">
+    @if (loading()) {
+      <div class="pl-loading"><mat-spinner diameter="40" /></div>
+    } @else if (error()) {
+      <p class="pl-error">{{ error() }}</p>
+    } @else if (flatRows().length === 0) {
+      <p class="pl-empty">No se encontraron cuentas PUC.</p>
+    } @else {
+      <table mat-table [dataSource]="flatRows()" class="pl-table">
+        <!-- Expand column -->
+        <ng-container matColumnDef="expand">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row">
+            @if (row.node.children.length > 0) {
+              <button mat-icon-button (click)="toggleExpand(row.node)" class="pl-expand-btn">
+                <mat-icon>{{ row.node.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
+              </button>
+            } @else {
+              <span class="pl-expand-placeholder"></span>
+            }
+          </td>
+        </ng-container>
 
-      <!-- Code column -->
-      <ng-container matColumnDef="code">
-        <th mat-header-cell *matHeaderCellDef>Código</th>
-        <td mat-cell *matCellDef="let row">
-          <span
-            class="pl-code"
-            [style.padding-left.px]="row.depth * 24"
-            [class.pl-inactive]="!row.node.account.active"
-          >
-            {{ row.node.account.code }}
-          </span>
-        </td>
-      </ng-container>
+        <!-- Code column -->
+        <ng-container matColumnDef="code">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
+          <td mat-cell *matCellDef="let row">
+            <span
+              class="pl-code"
+              [style.padding-left.px]="row.depth * 24"
+              [class.pl-inactive]="!row.node.account.active"
+            >
+              {{ row.node.account.code }}
+            </span>
+          </td>
+        </ng-container>
 
-      <!-- Name column -->
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.pl-inactive]="!row.node.account.active">
-            {{ row.node.account.name }}
-          </span>
-        </td>
-      </ng-container>
+        <!-- Name column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.pl-inactive]="!row.node.account.active">
+              {{ row.node.account.name }}
+            </span>
+          </td>
+        </ng-container>
 
-      <!-- Level column -->
-      <ng-container matColumnDef="level">
-        <th mat-header-cell *matHeaderCellDef>Nivel</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.pl-inactive]="!row.node.account.active">
-            {{ row.node.account.level }}
-          </span>
-        </td>
-      </ng-container>
+        <!-- Level column -->
+        <ng-container matColumnDef="level">
+          <th mat-header-cell *matHeaderCellDef>Nivel</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.pl-inactive]="!row.node.account.active">
+              {{ row.node.account.level }}
+            </span>
+          </td>
+        </ng-container>
 
-      <!-- Account class column -->
-      <ng-container matColumnDef="accountClass">
-        <th mat-header-cell *matHeaderCellDef>Clase</th>
-        <td mat-cell *matCellDef="let row">
-          <span [class.pl-inactive]="!row.node.account.active">
-            {{ accountClassLabels[row.node.account.accountClass] || row.node.account.accountClass }}
-          </span>
-        </td>
-      </ng-container>
+        <!-- Account class column -->
+        <ng-container matColumnDef="accountClass">
+          <th mat-header-cell *matHeaderCellDef>Clase</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.pl-inactive]="!row.node.account.active">
+              {{
+                accountClassLabels[row.node.account.accountClass] || row.node.account.accountClass
+              }}
+            </span>
+          </td>
+        </ng-container>
 
-      <!-- Account nature column -->
-      <ng-container matColumnDef="accountNature">
-        <th mat-header-cell *matHeaderCellDef>Naturaleza</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-chip [disabled]="!row.node.account.active">
-            {{ row.node.account.accountNature }}
-          </mat-chip>
-        </td>
-      </ng-container>
+        <!-- Account nature column -->
+        <ng-container matColumnDef="accountNature">
+          <th mat-header-cell *matHeaderCellDef>Naturaleza</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-chip [disabled]="!row.node.account.active">
+              {{ row.node.account.accountNature }}
+            </mat-chip>
+          </td>
+        </ng-container>
 
-      <!-- Active column -->
-      <ng-container matColumnDef="active">
-        <th mat-header-cell *matHeaderCellDef>Estado</th>
-        <td mat-cell *matCellDef="let row">
-          <mat-chip [class]="row.node.account.active ? 'pl-chip-active' : 'pl-chip-inactive'">
-            {{ row.node.account.active ? 'Activo' : 'Inactivo' }}
-          </mat-chip>
-        </td>
-      </ng-container>
+        <!-- Active column -->
+        <ng-container matColumnDef="active">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-chip [class]="row.node.account.active ? 'pl-chip-active' : 'pl-chip-inactive'">
+              {{ row.node.account.active ? 'Activo' : 'Inactivo' }}
+            </mat-chip>
+          </td>
+        </ng-container>
 
-      <!-- Actions column -->
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          <button
-            mat-icon-button
-            color="primary"
-            [routerLink]="['/administracion/puc', row.node.account.id]"
-            matTooltip="Editar"
-          >
-            <mat-icon>edit</mat-icon>
-          </button>
-          @if (row.node.account.active) {
+        <!-- Actions column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row">
             <button
               mat-icon-button
-              color="warn"
-              (click)="deactivateAccount(row.node.account)"
-              matTooltip="Desactivar"
+              color="primary"
+              (click)="openEdit(row.node.account)"
+              matTooltip="Editar"
             >
-              <mat-icon>block</mat-icon>
+              <mat-icon>edit</mat-icon>
             </button>
-          }
-        </td>
-      </ng-container>
+            @if (row.node.account.active) {
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="deactivateAccount(row.node.account)"
+                matTooltip="Desactivar"
+              >
+                <mat-icon>block</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr
-        mat-row
-        *matRowDef="let row; columns: displayedColumns"
-        [class.pl-row-inactive]="!row.node.account.active"
-      ></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [class.pl-row-inactive]="!row.node.account.active"
+          [class.pl-row-class]="row.node.account.level === 1"
+        ></tr>
+      </table>
+    }
+  </div>
+
+  @if (panelOpen()) {
+    <aside class="pl-editor" aria-label="Formulario de cuenta PUC">
+      <div class="pl-editor-header">
+        <div class="pl-editor-heading">
+          <div class="pl-editor-icon">
+            <mat-icon>{{ isEdit() ? 'edit' : 'add' }}</mat-icon>
+          </div>
+          <div>
+            <h3>{{ isEdit() ? 'Editar cuenta PUC' : 'Nueva cuenta PUC' }}</h3>
+            <p>Completa la información para {{ isEdit() ? 'actualizar' : 'crear' }} una cuenta.</p>
+          </div>
+        </div>
+        <button mat-icon-button type="button" (click)="closePanel()" aria-label="Cerrar formulario">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      @if (formLoading()) {
+        <div class="pl-editor-loading"><mat-spinner diameter="36" /></div>
+      } @else {
+        <form [formGroup]="accountForm" (ngSubmit)="submitAccount()" class="pl-form">
+          @if (formError()) {
+            <div class="pl-form-error">{{ formError() }}</div>
+          }
+
+          <div class="pl-form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="code" maxlength="20" placeholder="Ej: 110505" />
+              @if (accountForm.controls.code.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Nivel</mat-label>
+              <mat-select formControlName="level">
+                @for (level of [1, 2, 3, 4, 5]; track level) {
+                  <mat-option [value]="level">{{ level }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre</mat-label>
+            <input
+              matInput
+              formControlName="name"
+              maxlength="200"
+              placeholder="Nombre de la cuenta"
+            />
+            @if (accountForm.controls.name.hasError('required')) {
+              <mat-error>Requerido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cuenta padre</mat-label>
+            <mat-select formControlName="parentCode">
+              <mat-option [value]="null">Ninguna (raíz)</mat-option>
+              @for (acc of parentAccounts(); track acc.id) {
+                <mat-option [value]="acc.code">{{ acc.code }} — {{ acc.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <div class="pl-form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Clase de cuenta</mat-label>
+              <mat-select formControlName="accountClass">
+                @for (option of accountClassOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Naturaleza</mat-label>
+              <mat-select formControlName="accountNature">
+                @for (option of accountNatureOptions; track option.value) {
+                  <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="pl-checkboxes">
+            <mat-checkbox formControlName="allowsTransactions">Permite transacciones</mat-checkbox>
+            <mat-checkbox formControlName="active">Activa</mat-checkbox>
+          </div>
+
+          <div class="pl-form-actions">
+            <button mat-stroked-button type="button" (click)="closePanel()">Cancelar</button>
+            <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
+              @if (saving()) {
+                <mat-spinner diameter="20" />
+              } @else {
+                <ng-container>
+                  <mat-icon>save</mat-icon>{{ isEdit() ? 'Guardar cambios' : 'Crear cuenta' }}
+                </ng-container>
+              }
+            </button>
+          </div>
+        </form>
+      }
+    </aside>
   }
 </div>

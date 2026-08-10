@@ -1,5 +1,6 @@
-import { Component, inject, input, signal, effect } from '@angular/core';
+import { Component, computed, inject, Input, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { FormArray, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -24,6 +25,7 @@ import Swal from 'sweetalert2';
   imports: [
     DecimalPipe,
     FormsModule,
+    ReactiveFormsModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
@@ -38,40 +40,36 @@ import Swal from 'sweetalert2';
   styleUrl: './presentations-tab.css',
 })
 export class PresentationsTabComponent {
-  readonly productId = input.required<string>();
+  @Input({ required: true }) productId!: string;
+  @Input() formArray: FormArray<FormGroup> = null!;
 
   private readonly presentationService = inject(PresentationService);
   readonly uomService = inject(UnitOfMeasureService);
+  private readonly fb = inject(FormBuilder);
 
-  readonly presentations = signal<ProductPresentation[]>([]);
+  readonly units = computed(() => this.uomService.units.value() ?? []);
+
   readonly loading = signal(false);
-  readonly editingRow = signal<ProductPresentation | null>(null);
+  readonly editingIndex = signal<number | null>(null);
   readonly adding = signal(false);
-
-  // New/edit form fields
-  readonly editCode = signal('');
-  readonly editName = signal('');
-  readonly editUomId = signal('');
-  readonly editFactor = signal(1);
-  readonly editPrice = signal<number | null>(null);
-  readonly editIsDefault = signal(false);
 
   readonly displayedColumns = ['code', 'name', 'uom', 'factor', 'price', 'isDefault', 'actions'];
 
   constructor() {
-    effect(() => {
-      const id = this.productId();
-      if (id) {
-        this.loadPresentations();
-      }
-    });
+    // loadPresentations() called from ngOnInit after inputs are available
+  }
+
+  ngOnInit(): void {
+    if (this.productId) {
+      this.loadPresentations();
+    }
   }
 
   loadPresentations(): void {
     this.loading.set(true);
-    this.presentationService.list(this.productId()).subscribe({
+    this.presentationService.list(this.productId).subscribe({
       next: (data) => {
-        this.presentations.set(data);
+        this.populateFormArray(data);
         this.loading.set(false);
       },
       error: () => {
@@ -80,46 +78,70 @@ export class PresentationsTabComponent {
     });
   }
 
-  startAdd(): void {
-    this.adding.set(true);
-    this.editingRow.set(null);
-    this.editCode.set('');
-    this.editName.set('');
-    this.editUomId.set('');
-    this.editFactor.set(1);
-    this.editPrice.set(null);
-    this.editIsDefault.set(false);
+  private populateFormArray(presentations: ProductPresentation[]): void {
+    this.formArray.clear({ emitEvent: false });
+    for (const p of presentations) {
+      this.formArray.push(this.createPresentationGroup(p), { emitEvent: false });
+    }
   }
 
-  startEdit(row: ProductPresentation): void {
+  private createPresentationGroup(p: ProductPresentation): FormGroup {
+    return this.fb.group({
+      id: [p.id],
+      code: [p.code, [Validators.required, Validators.maxLength(20)]],
+      name: [p.name, [Validators.required, Validators.maxLength(100)]],
+      unitOfMeasureId: [p.unitOfMeasureId, Validators.required],
+      conversionFactor: [p.conversionFactor, [Validators.required, Validators.min(0.0001)]],
+      salePrice: [p.salePrice],
+      isDefault: [p.isDefault],
+    });
+  }
+
+  startAdd(): void {
+    this.adding.set(true);
+    this.editingIndex.set(null);
+    const newGroup = this.fb.group({
+      id: [null],
+      code: ['', [Validators.required, Validators.maxLength(20)]],
+      name: ['', [Validators.required, Validators.maxLength(100)]],
+      unitOfMeasureId: ['', Validators.required],
+      conversionFactor: [1, [Validators.required, Validators.min(0.0001)]],
+      salePrice: [null as number | null],
+      isDefault: [false],
+    });
+    this.formArray.push(newGroup);
+  }
+
+  startEdit(index: number): void {
     this.adding.set(false);
-    this.editingRow.set(row);
-    this.editCode.set(row.code);
-    this.editName.set(row.name);
-    this.editUomId.set(row.unitOfMeasureId);
-    this.editFactor.set(row.conversionFactor);
-    this.editPrice.set(row.salePrice);
-    this.editIsDefault.set(row.isDefault);
+    this.editingIndex.set(index);
   }
 
   cancelEdit(): void {
+    if (this.adding()) {
+      this.formArray.removeAt(this.formArray.length - 1, { emitEvent: false });
+    }
     this.adding.set(false);
-    this.editingRow.set(null);
+    this.editingIndex.set(null);
   }
 
   saveNew(): void {
-    if (!this.editCode() || !this.editName() || !this.editUomId()) return;
+    const addGroup = this.formArray.at(this.formArray.length - 1);
+    if (addGroup.invalid) {
+      addGroup.markAllAsTouched();
+      return;
+    }
 
     const req: ProductPresentationRequest = {
-      code: this.editCode(),
-      name: this.editName(),
-      unitOfMeasureId: this.editUomId(),
-      conversionFactor: this.editFactor(),
-      salePrice: this.editPrice(),
-      isDefault: this.editIsDefault(),
+      code: addGroup.get('code')?.value,
+      name: addGroup.get('name')?.value,
+      unitOfMeasureId: addGroup.get('unitOfMeasureId')?.value,
+      conversionFactor: addGroup.get('conversionFactor')?.value,
+      salePrice: addGroup.get('salePrice')?.value ?? null,
+      isDefault: addGroup.get('isDefault')?.value,
     };
 
-    this.presentationService.create(this.productId(), req).subscribe({
+    this.presentationService.create(this.productId, req).subscribe({
       next: () => {
         this.adding.set(false);
         this.loadPresentations();
@@ -140,51 +162,60 @@ export class PresentationsTabComponent {
     });
   }
 
-  saveEdit(row: ProductPresentation): void {
-    if (!this.editCode() || !this.editName() || !this.editUomId()) return;
+  saveEdit(group: FormGroup): void {
+    if (group.invalid) {
+      group.markAllAsTouched();
+      return;
+    }
 
     const req: ProductPresentationRequest = {
-      code: this.editCode(),
-      name: this.editName(),
-      unitOfMeasureId: this.editUomId(),
-      conversionFactor: this.editFactor(),
-      salePrice: this.editPrice(),
-      isDefault: this.editIsDefault(),
+      code: group.get('code')?.value,
+      name: group.get('name')?.value,
+      unitOfMeasureId: group.get('unitOfMeasureId')?.value,
+      conversionFactor: group.get('conversionFactor')?.value,
+      salePrice: group.get('salePrice')?.value ?? null,
+      isDefault: group.get('isDefault')?.value,
     };
 
-    this.presentationService.update(this.productId(), row.id, req).subscribe({
-      next: () => {
-        this.editingRow.set(null);
-        this.loadPresentations();
-        Swal.fire({
-          icon: 'success',
-          title: 'Presentación actualizada',
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      },
-      error: (err) => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err?.error?.message ?? 'No se pudo actualizar.',
-        });
-      },
-    });
+    this.presentationService
+      .update(this.productId, group.get('id')?.value as string, req)
+      .subscribe({
+        next: () => {
+          this.editingIndex.set(null);
+          this.loadPresentations();
+          Swal.fire({
+            icon: 'success',
+            title: 'Presentación actualizada',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+        },
+        error: (err) => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err?.error?.message ?? 'No se pudo actualizar.',
+          });
+        },
+      });
   }
 
-  deletePresentation(row: ProductPresentation): void {
+  deletePresentation(index: number): void {
+    const group = this.formArray.at(index);
+    const presentationId = group.get('id')?.value as string;
+    const code = group.get('code')?.value;
+    const name = group.get('name')?.value;
     Swal.fire({
       icon: 'warning',
       title: '¿Eliminar presentación?',
-      text: `Se eliminará "${row.code} - ${row.name}"`,
+      text: `Se eliminará "${code} - ${name}"`,
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#ef4444',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.presentationService.delete(this.productId(), row.id).subscribe({
+        this.presentationService.delete(this.productId, presentationId).subscribe({
           next: () => {
             this.loadPresentations();
             Swal.fire({
@@ -202,26 +233,29 @@ export class PresentationsTabComponent {
     });
   }
 
-  setAsDefault(row: ProductPresentation): void {
+  setAsDefault(index: number): void {
+    const group = this.formArray.at(index);
     const req: ProductPresentationRequest = {
-      code: row.code,
-      name: row.name,
-      unitOfMeasureId: row.unitOfMeasureId,
-      conversionFactor: row.conversionFactor,
-      salePrice: row.salePrice,
+      code: group.get('code')?.value,
+      name: group.get('name')?.value,
+      unitOfMeasureId: group.get('unitOfMeasureId')?.value,
+      conversionFactor: group.get('conversionFactor')?.value,
+      salePrice: group.get('salePrice')?.value ?? null,
       isDefault: true,
     };
-    this.presentationService.update(this.productId(), row.id, req).subscribe({
-      next: () => {
-        this.loadPresentations();
-      },
-      error: (err) => {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err?.error?.message ?? 'No se pudo marcar como predeterminada.',
-        });
-      },
-    });
+    this.presentationService
+      .update(this.productId, group.get('id')?.value as string, req)
+      .subscribe({
+        next: () => {
+          this.loadPresentations();
+        },
+        error: (err) => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err?.error?.message ?? 'No se pudo marcar como predeterminada.',
+          });
+        },
+      });
   }
 }

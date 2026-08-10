@@ -1,0 +1,184 @@
+/* ── Two‑column layout ── */
+.pg-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 32px 32px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .pg-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+/* ── Cards column ── */
+.pg-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Sidebar ── */
+.pg-sidebar {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
+
+@media (max-width: 1023px) {
+  .pg-sidebar {
+    position: static;
+  }
+}
+
+/* ── Card base ── */
+.pg-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+/* ── Card header ── */
+.pg-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.pg-card__header--blue {
+  background: #eff6ff;
+}
+.pg-card__header--green {
+  background: #f0fdf4;
+}
+.pg-card__header--amber {
+  background: #fffbeb;
+}
+.pg-card__header--purple {
+  background: #faf5ff;
+}
+.pg-card__header--red {
+  background: #fef2f2;
+}
+
+.pg-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.pg-card__icon mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.pg-card__icon--blue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.pg-card__icon--green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.pg-card__icon--amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+.pg-card__icon--purple {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+.pg-card__icon--red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.pg-card__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pg-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.pg-card__desc {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pg-card__body {
+  padding: 20px;
+}
+
+/* ── Full-width form control ── */
+.full-width-form {
+  width: 100%;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* ── Form grids inside cards ── */
+.form-grid {
+  display: grid;
+  gap: 0 12px;
+}
+
+.form-grid--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.form-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.form-grid--4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 768px) {
+  .pg-layout {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .form-grid--3,
+  .form-grid--4 {
+    grid-template-columns: 1fr;
+  }
+  .form-grid--2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Checkboxes grid ── */
+.checkboxes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 4px 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .checkboxes-grid {
+    grid-template-columns: 1fr;
+  }
+}

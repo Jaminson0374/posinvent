@@ -1,0 +1,102 @@
+/* ── Card base ── */
+.ps-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* ── Card header ── */
+.ps-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.ps-card__header--orange {
+  background: #fff7ed;
+}
+
+.ps-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.ps-card__icon mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.ps-card__icon--orange {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.ps-card__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ps-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.ps-card__desc {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.ps-card__body {
+  padding: 14px 16px;
+}
+
+/* ── Supplier header ── */
+.ps-supplier-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+/* ── Supplier row ── */
+.ps-supplier-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ps-supplier-row:last-child {
+  border-bottom: none;
+}
+
+.ps-supplier-row mat-form-field {
+  flex: 1;
+  min-width: 140px;
+}
+
+.ps-cost-field {
+  max-width: 160px;
+}
+
+/* ── Empty state ── */
+.ps-supplier-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 24px 0;
+}

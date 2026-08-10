@@ -1,0 +1,73 @@
+<ng-container [formGroup]="form">
+  <!-- ══ CARD: CUENTAS CONTABLES ════════════════════════════════════ -->
+  <div class="pa-card">
+    <div class="pa-card__header pa-card__header--indigo">
+      <div class="pa-card__icon pa-card__icon--indigo">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div class="pa-card__header-text">
+        <h3 class="pa-card__title">Cuentas contables</h3>
+        <p class="pa-card__desc">Asignación de cuentas PUC para contabilización</p>
+      </div>
+    </div>
+    <mat-divider />
+    <div class="pa-card__body">
+      <mat-form-field appearance="outline" class="pa-full-width">
+        <mat-label>Cuenta de ingresos (Clase 4)</mat-label>
+        <mat-select formControlName="incomeAccountId">
+          <mat-option [value]="null">— Ninguna —</mat-option>
+          @for (a of incomeAccounts; track a.id) {
+            <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pa-full-width">
+        <mat-label>Cuenta de inventario (Clase 1)</mat-label>
+        <mat-select formControlName="inventoryAccountId">
+          <mat-option [value]="null">— Ninguna —</mat-option>
+          @for (a of inventoryAccounts; track a.id) {
+            <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="pa-full-width">
+        <mat-label>Cuenta de costo de ventas (Clase 6)</mat-label>
+        <mat-select formControlName="costOfSalesAcctId">
+          <mat-option [value]="null">— Ninguna —</mat-option>
+          @for (a of costAccounts; track a.id) {
+            <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <mat-divider class="pa-section-divider" />
+
+  <!-- ══ PLANTILLA CONTABLE ════════════════════════════════════════ -->
+  <div class="pa-card">
+    <div class="pa-card__header pa-card__header--teal">
+      <div class="pa-card__icon pa-card__icon--teal">
+        <mat-icon>account_tree</mat-icon>
+      </div>
+      <div class="pa-card__header-text">
+        <h3 class="pa-card__title">Plantilla contable</h3>
+        <p class="pa-card__desc">Selección de plantilla de contabilización</p>
+      </div>
+    </div>
+    <mat-divider />
+    <div class="pa-card__body">
+      <mat-form-field appearance="outline" class="pa-full-width">
+        <mat-label>Plantilla contable</mat-label>
+        <mat-select formControlName="accountingTemplateId">
+          <mat-option [value]="null">— Ninguna —</mat-option>
+          @for (tpl of templates; track tpl.id) {
+            <mat-option [value]="tpl.id">{{ tpl.code }} — {{ tpl.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+</ng-container>
