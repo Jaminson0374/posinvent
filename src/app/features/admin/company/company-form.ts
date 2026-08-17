@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -182,10 +182,12 @@ export class CompanyFormComponent {
   private snapshot: ReturnType<typeof this.form.getRawValue> | null = null;
 
   constructor() {
-    this.loadWarehouses();
-    this.loadConfig();
-    this.loadRetentions();
-    this.loadNaturalPersons();
+    afterNextRender(() => {
+      this.loadWarehouses();
+      this.loadConfig();
+      this.loadRetentions();
+      this.loadNaturalPersons();
+    });
   }
 
   // ── Retention configs ──────────────────────────────────────────────
