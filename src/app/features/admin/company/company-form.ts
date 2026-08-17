@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -8,11 +9,19 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import type { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { CompanyConfigService } from '../../../core/services/company-config.service';
+import { DianService } from '../../../core/services/dian.service';
 import { PurchaseRetentionConfigService } from '../../../core/services/purchase-retention-config.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { Warehouse } from '../../../core/models/warehouse.model';
 import type { PurchaseRetentionConfig } from '../../../core/models/purchase-retention-config.model';
+import { ThirdPartyService } from '../../../core/services/third-party.service';
+import { CatalogService } from '../../../core/services/catalog.service';
+import type { ThirdParty } from '../../../core/models/third-party.model';
+import { calculateNitDv } from '../third-parties/utils/nit-dv.utils';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -26,6 +35,8 @@ import Swal from 'sweetalert2';
     MatIconModule,
     MatProgressSpinnerModule,
     MatSlideToggleModule,
+    MatAutocompleteModule,
+    MatCheckboxModule,
     DecimalPipe,
   ],
   templateUrl: './company-form.html',
@@ -35,17 +46,26 @@ export class CompanyFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly companyConfigService = inject(CompanyConfigService);
   private readonly warehouseService = inject(WarehouseService);
+  private readonly dianService = inject(DianService);
+  private readonly thirdPartyService = inject(ThirdPartyService);
+  private readonly catalogService = inject(CatalogService);
   readonly retentionService = inject(PurchaseRetentionConfigService);
 
   readonly saving = signal(false);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly warehouses = signal<Warehouse[]>([]);
-  readonly dianResolutions = signal<Array<{ id: string; resolutionNumber: string }>>([]);
-  readonly certificates = signal<Array<{ id: string; name: string }>>([]);
+  readonly dianResolutions = this.dianService.resolutions;
+  readonly certificates = this.dianService.certificates;
   readonly retentions = signal<PurchaseRetentionConfig[]>([]);
   readonly retentionLoading = signal(false);
   readonly editingRetentionId = signal<string | null>(null);
+  readonly naturalPersons = signal<ThirdParty[]>([]);
+  readonly selectedRepId = signal<string | null>(null);
+  readonly representative = computed(() => {
+    const id = this.selectedRepId();
+    return id ? (this.naturalPersons().find((tp) => tp.id === id) ?? null) : null;
+  });
 
   readonly retentionForm = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.maxLength(30)]],
@@ -65,10 +85,19 @@ export class CompanyFormComponent {
     phone: ['', [Validators.maxLength(30)]],
     email: ['', [Validators.email, Validators.maxLength(255)]],
     economicActivity: ['', [Validators.maxLength(255)]],
-    taxRegime: ['', [Validators.maxLength(100)]],
+    personType: ['JURIDICA', [Validators.required]],
+    commonName: ['', [Validators.maxLength(200)]],
+    manejaAiu: [false],
+    taxResponsibilityCodes: [[] as string[]],
+    fiscalResponsibilityCodes: [[] as string[]],
+    taxCodes: [[] as string[]],
+    icaRate: [0 as number, []],
     currency: ['COP', [Validators.required, Validators.maxLength(3)]],
     mainWarehouseId: ['' as string, []],
     logoUrl: ['', [Validators.maxLength(500)]],
+    // Los siguientes 6 campos existen en company_config y se persisten (round-trip),
+    // pero NO se exponen en la UI por decisión del usuario. Se conservan en el
+    // FormGroup para evitar que un submit los envíe como null y borre su valor en BD.
     moratoryInterestRate: [2.5 as number, []],
     interestGraceDays: [0 as number, []],
     interestCompoundFrequency: ['MONTHLY' as string, []],
@@ -78,13 +107,85 @@ export class CompanyFormComponent {
     dianResolutionId: ['' as string, []],
     softwarePin: ['' as string, []],
     certificateId: ['' as string, []],
+    legalRepresentativeId: ['' as string, []],
     purchaseRetefuenteRate: [0 as number, []],
   });
+
+  // Divisas más comunes (ISO 4217).
+  readonly currencies = [
+    { code: 'COP', label: 'COP — Peso Colombiano' },
+    { code: 'USD', label: 'USD — Dólar estadounidense' },
+    { code: 'EUR', label: 'EUR — Euro' },
+    { code: 'MXN', label: 'MXN — Peso Mexicano' },
+    { code: 'ARS', label: 'ARS — Peso Argentino' },
+    { code: 'CLP', label: 'CLP — Peso Chileno' },
+    { code: 'PEN', label: 'PEN — Sol Peruano' },
+    { code: 'BRL', label: 'BRL — Real Brasileño' },
+    { code: 'GBP', label: 'GBP — Libra esterlina' },
+    { code: 'CAD', label: 'CAD — Dólar canadiense' },
+    { code: 'CHF', label: 'CHF — Franco suizo' },
+    { code: 'JPY', label: 'JPY — Yen japonés' },
+  ];
+
+  // Tarifas ICA (por mil) más comunes.
+  readonly icaRates = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  // Búsqueda de actividad económica (CIIU) con autocomplete (lista desde backend).
+  readonly ciiuFilter = signal('');
+  readonly filteredCiiu = computed(() => {
+    const q = this.ciiuFilter().toLowerCase().trim();
+    const list = this.catalogService.ciiuActivities.value() ?? [];
+    if (!q) return list;
+    return list.filter((a) => a.code.includes(q) || a.name.toLowerCase().includes(q));
+  });
+
+  readonly taxResponsibilities = computed(
+    () => this.catalogService.taxResponsibilities.value() ?? [],
+  );
+  readonly fiscalResponsibilities = computed(
+    () => this.catalogService.fiscalResponsibilities.value() ?? [],
+  );
+  readonly taxes = computed(() => this.catalogService.taxes.value() ?? []);
+
+  isTaxRespDisabled(code: string): boolean {
+    const selected = this.form.controls.taxResponsibilityCodes.value ?? [];
+    if (selected.includes(code)) return false;
+    const item = this.taxResponsibilities().find((c) => c.code === code);
+    return !!item && selected.some((s) => item.excludes.includes(s));
+  }
+
+  isFiscalRespDisabled(code: string): boolean {
+    const selected = this.form.controls.fiscalResponsibilityCodes.value ?? [];
+    if (selected.includes(code)) return false;
+    const item = this.fiscalResponsibilities().find((c) => c.code === code);
+    return !!item && selected.some((s) => item.excludes.includes(s));
+  }
+
+  toggleFiscalResp(code: string, checked: boolean): void {
+    const ctrl = this.form.controls.fiscalResponsibilityCodes;
+    const current = ctrl.value ?? [];
+    const next = checked ? [...current, code] : current.filter((c) => c !== code);
+    ctrl.setValue(next);
+    ctrl.markAsDirty();
+  }
+
+  // Señal reactiva del NIT (necesaria para que el DV se recalcule al escribir).
+  private readonly nitSig = toSignal(this.form.controls.nit.valueChanges, {
+    initialValue: this.form.controls.nit.value,
+  });
+
+  // DV (dígito de verificación) — ayuda visual calculada con la util existente.
+  // No modifica el modelo de persistencia: el NIT se sigue guardando como un único string.
+  readonly dv = computed(() => calculateNitDv(this.nitSig() ?? ''));
+
+  // Instantánea de los últimos valores cargados (para el botón "Cancelar").
+  private snapshot: ReturnType<typeof this.form.getRawValue> | null = null;
 
   constructor() {
     this.loadWarehouses();
     this.loadConfig();
     this.loadRetentions();
+    this.loadNaturalPersons();
   }
 
   // ── Retention configs ──────────────────────────────────────────────
@@ -200,12 +301,18 @@ export class CompanyFormComponent {
       next: (config) => {
         this.form.patchValue({
           companyName: config.companyName,
-          nit: config.nit,
+          nit: this.extractNitBase(config.nit),
           address: config.address ?? '',
           phone: config.phone ?? '',
           email: config.email ?? '',
           economicActivity: config.economicActivity ?? '',
-          taxRegime: config.taxRegime ?? '',
+          personType: config.personType ?? 'JURIDICA',
+          commonName: config.commonName ?? '',
+          manejaAiu: config.manejaAiu ?? false,
+          taxResponsibilityCodes: config.taxResponsibilityCodes ?? [],
+          fiscalResponsibilityCodes: config.fiscalResponsibilityCodes ?? [],
+          taxCodes: config.taxCodes ?? [],
+          icaRate: config.icaRate ?? 0,
           currency: config.currency,
           mainWarehouseId: config.mainWarehouseId ?? '',
           logoUrl: config.logoUrl ?? '',
@@ -218,8 +325,11 @@ export class CompanyFormComponent {
           dianResolutionId: config.dianResolutionId ?? '',
           softwarePin: config.softwarePin ?? '',
           certificateId: config.certificateId ?? '',
+          legalRepresentativeId: config.legalRepresentativeId ?? '',
           purchaseRetefuenteRate: config.purchaseRetefuenteRate ?? 0,
         });
+        this.selectedRepId.set(config.legalRepresentativeId ?? null);
+        this.snapshot = this.form.getRawValue();
         this.loading.set(false);
       },
       error: (err) => {
@@ -239,12 +349,18 @@ export class CompanyFormComponent {
     const v = this.form.getRawValue();
     const body = {
       companyName: v.companyName,
-      nit: v.nit,
+      nit: this.buildFullNit(v.nit),
       address: v.address || null,
       phone: v.phone || null,
       email: v.email || null,
       economicActivity: v.economicActivity || null,
-      taxRegime: v.taxRegime || null,
+      personType: v.personType || null,
+      commonName: v.commonName || null,
+      manejaAiu: v.manejaAiu,
+      taxResponsibilityCodes: v.taxResponsibilityCodes ?? [],
+      fiscalResponsibilityCodes: v.fiscalResponsibilityCodes ?? [],
+      taxCodes: v.taxCodes ?? [],
+      icaRate: v.icaRate ? v.icaRate : null,
       currency: v.currency,
       mainWarehouseId: v.mainWarehouseId || null,
       logoUrl: v.logoUrl || null,
@@ -257,6 +373,7 @@ export class CompanyFormComponent {
       dianResolutionId: v.dianResolutionId || null,
       softwarePin: v.softwarePin || null,
       certificateId: v.certificateId || null,
+      legalRepresentativeId: v.legalRepresentativeId || null,
       purchaseRetefuenteRate: v.purchaseRetefuenteRate || null,
     };
 
@@ -285,5 +402,45 @@ export class CompanyFormComponent {
         });
       },
     });
+  }
+
+  // Restaura el formulario a los últimos valores cargados (descarta cambios sin guardar).
+  cancel(): void {
+    if (this.snapshot) {
+      this.form.reset(this.snapshot);
+      this.selectedRepId.set(this.snapshot.legalRepresentativeId || null);
+    }
+    this.error.set(null);
+  }
+
+  onRepSelected(id: string): void {
+    this.selectedRepId.set(id || null);
+  }
+
+  onCiiuSelected(event: MatAutocompleteSelectedEvent): void {
+    this.ciiuFilter.set(event.option.value as string);
+  }
+
+  private loadNaturalPersons(): void {
+    this.thirdPartyService.getNaturalPersons().subscribe({
+      next: (list) => this.naturalPersons.set(list),
+      error: () => this.error.set('Error al cargar los terceros (personas naturales).'),
+    });
+  }
+
+  // El NIT se guarda en BD como "base-DV". El formulario expone solo la base y el
+  // DV se calcula automáticamente (mismo comportamiento que en terceros).
+  private extractNitBase(full: string): string {
+    const m = full?.match(/^(.*)-(\d)$/);
+    const base = (m ? m[1] : (full ?? '')).replace(/\D/g, '');
+    // El seed por defecto es "000000000-0": tratarlo como vacío (no es un NIT real).
+    return /^0+$/.test(base) ? '' : base;
+  }
+
+  private buildFullNit(base: string): string {
+    const digits = base.replace(/\D/g, '');
+    if (!digits) return base;
+    const dv = calculateNitDv(digits);
+    return dv ? `${digits}-${dv}` : digits;
   }
 }

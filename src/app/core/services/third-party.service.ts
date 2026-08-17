@@ -63,6 +63,12 @@ export class ThirdPartyService {
       .pipe(map((p) => p.content));
   }
 
+  getNaturalPersons(): Observable<ThirdParty[]> {
+    return this.http
+      .get<PageResponse<ThirdParty>>(`${this.base}?personType=NATURAL&active=true&size=100`)
+      .pipe(map((p) => p.content));
+  }
+
   getAvailableEmployees(): Observable<EmployeeOption[]> {
     return this.http.get<EmployeeOption[]>(`${this.base}/employees/available`);
   }

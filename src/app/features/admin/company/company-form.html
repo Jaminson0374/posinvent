@@ -1,5 +1,10 @@
 <div class="company-config-container">
-  <h1 class="page-title">Configuración de Empresa</h1>
+  <header class="page-header">
+    <h1 class="page-title">Configuración de Empresa</h1>
+    <p class="page-subtitle">
+      Administra la información general, fiscal y de facturación de tu empresa.
+    </p>
+  </header>
 
   @if (loading()) {
     <div class="loading-spinner">
@@ -15,126 +20,316 @@
   }
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="company-form">
-    <mat-form-field appearance="outline">
-      <mat-label>Nombre de la empresa</mat-label>
-      <input matInput formControlName="companyName" placeholder="Ej: Carnes del Valle S.A.S." />
-      @if (form.controls.companyName.invalid && form.controls.companyName.touched) {
-        <mat-error>El nombre de la empresa es requerido.</mat-error>
-      }
-    </mat-form-field>
+    <!-- ── Información de la empresa ─────────────────────────────────── -->
+    <section class="config-card">
+      <header class="card-header">
+        <mat-icon class="card-icon">business</mat-icon>
+        <div>
+          <h2 class="card-title">Datos básicos de la empresa</h2>
+          <p class="card-subtitle">
+            Datos generales de identificación, contacto y configuración básica.
+          </p>
+        </div>
+      </header>
 
-    <mat-form-field appearance="outline">
-      <mat-label>NIT</mat-label>
-      <input matInput formControlName="nit" placeholder="Ej: 900.123.456-7" />
-      @if (form.controls.nit.invalid && form.controls.nit.touched) {
-        <mat-error>El NIT es requerido.</mat-error>
-      }
-    </mat-form-field>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo de empresa</mat-label>
+          <mat-select formControlName="personType">
+            <mat-option value="NATURAL">Natural</mat-option>
+            <mat-option value="JURIDICA">Jurídica</mat-option>
+          </mat-select>
+          @if (form.controls.personType.invalid && form.controls.personType.touched) {
+            <mat-error>El tipo de empresa es requerido.</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Dirección</mat-label>
-      <input matInput formControlName="address" placeholder="Ej: Calle 123 #45-67" />
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Razón social</mat-label>
+          <input matInput formControlName="companyName" placeholder="Ej: Carnes del Valle S.A.S." />
+          @if (form.controls.companyName.invalid && form.controls.companyName.touched) {
+            <mat-error>El nombre de la empresa es requerido.</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Teléfono</mat-label>
-      <input matInput formControlName="phone" placeholder="Ej: +57 300 123 4567" />
-    </mat-form-field>
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Nombre comercial</mat-label>
+          <input matInput formControlName="commonName" placeholder="Ej: Carnes del Valle" />
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Correo electrónico</mat-label>
-      <input matInput formControlName="email" placeholder="Ej: contacto@empresa.com" type="email" />
-      @if (form.controls.email.invalid && form.controls.email.touched) {
-        <mat-error>Ingrese un correo electrónico válido.</mat-error>
-      }
-    </mat-form-field>
+        <div class="nit-row">
+          <mat-form-field appearance="outline" class="nit-field">
+            <mat-label>NIT</mat-label>
+            <input matInput formControlName="nit" placeholder="Ej: 900.123.456" />
+            <mat-hint>El DV se calcula automáticamente.</mat-hint>
+            @if (form.controls.nit.invalid && form.controls.nit.touched) {
+              <mat-error>El NIT es requerido.</mat-error>
+            }
+          </mat-form-field>
+          <div class="dv-box" [class.dv-box--valid]="dv()">
+            <span class="dv-label">DV</span>
+            <span class="dv-value">{{ dv() || '—' }}</span>
+            @if (dv()) {
+              <mat-icon class="dv-check">check_circle</mat-icon>
+            }
+          </div>
+        </div>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Actividad económica</mat-label>
-      <input
-        matInput
-        formControlName="economicActivity"
-        placeholder="Ej: Comercio al por mayor de carne"
-      />
-    </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Dirección</mat-label>
+          <input matInput formControlName="address" placeholder="Ej: Calle 123 #45-67" />
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Régimen tributario</mat-label>
-      <input matInput formControlName="taxRegime" placeholder="Ej: Régimen común" />
-    </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="phone" placeholder="Ej: +57 300 123 4567" />
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Moneda</mat-label>
-      <input matInput formControlName="currency" placeholder="COP" />
-      @if (form.controls.currency.invalid && form.controls.currency.touched) {
-        <mat-error>La moneda es requerida.</mat-error>
-      }
-    </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Correo electrónico</mat-label>
+          <input
+            matInput
+            formControlName="email"
+            placeholder="Ej: contacto@empresa.com"
+            type="email"
+          />
+          @if (form.controls.email.invalid && form.controls.email.touched) {
+            <mat-error>Ingrese un correo electrónico válido.</mat-error>
+          }
+        </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Bodega principal</mat-label>
-      <mat-select formControlName="mainWarehouseId">
-        <mat-option [value]="''">— Sin bodega —</mat-option>
-        @for (wh of warehouses(); track wh.id) {
-          <mat-option [value]="wh.id">{{ wh.name }}</mat-option>
+        <mat-form-field appearance="outline">
+          <mat-label>Moneda</mat-label>
+          <mat-select formControlName="currency">
+            @for (c of currencies; track c.code) {
+              <mat-option [value]="c.code">{{ c.label }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.currency.invalid && form.controls.currency.touched) {
+            <mat-error>La moneda es requerida.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Bodega principal</mat-label>
+          <mat-select formControlName="mainWarehouseId">
+            <mat-option [value]="''">— Sin bodega —</mat-option>
+            @for (wh of warehouses(); track wh.id) {
+              <mat-option [value]="wh.id">{{ wh.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>URL del logo</mat-label>
+          <input
+            matInput
+            formControlName="logoUrl"
+            placeholder="Ej: https://empresa.com/logo.png"
+          />
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- ── Información tributaria ────────────────────────────────────── -->
+    <section class="config-card">
+      <header class="card-header">
+        <mat-icon class="card-icon">account_balance</mat-icon>
+        <div>
+          <h2 class="card-title">Información tributaria</h2>
+          <p class="card-subtitle">Configuración fiscal e impuestos de la empresa.</p>
+        </div>
+      </header>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Actividad económica (CIIU)</mat-label>
+          <input
+            matInput
+            formControlName="economicActivity"
+            placeholder="Buscar por código o descripción"
+            [matAutocomplete]="autoCiiu"
+            (input)="ciiuFilter.set($any($event.target).value)"
+          />
+          <mat-autocomplete #autoCiiu="matAutocomplete" (optionSelected)="onCiiuSelected($event)">
+            @for (a of filteredCiiu(); track a.code) {
+              <mat-option [value]="a.code + ' — ' + a.name">
+                {{ a.code }} — {{ a.name }}
+              </mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tarifa ICA</mat-label>
+          <mat-select formControlName="icaRate">
+            <mat-option [value]="0">— Sin tarifa —</mat-option>
+            @for (r of icaRates; track r) {
+              <mat-option [value]="r">{{ r }} × 1.000</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="checkbox-field span-2">
+          <mat-checkbox formControlName="manejaAiu">Maneja AIU</mat-checkbox>
+        </div>
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Régimen tributario</mat-label>
+          <mat-select formControlName="taxResponsibilityCodes" multiple>
+            @for (r of taxResponsibilities(); track r.code) {
+              <mat-option [value]="r.code" [disabled]="isTaxRespDisabled(r.code)">{{
+                r.name
+              }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="checkbox-group span-2">
+          <span class="checkbox-group-label">Responsabilidades fiscales</span>
+          @for (r of fiscalResponsibilities(); track r.code) {
+            <mat-checkbox
+              [checked]="form.controls.fiscalResponsibilityCodes.value.includes(r.code)"
+              [disabled]="isFiscalRespDisabled(r.code)"
+              (change)="toggleFiscalResp(r.code, $event.checked)"
+            >
+              {{ r.name }}
+            </mat-checkbox>
+          }
+        </div>
+
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Impuestos</mat-label>
+          <mat-select formControlName="taxCodes" multiple>
+            @for (t of taxes(); track t.code) {
+              <mat-option [value]="t.code">{{ t.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- ── Facturación electrónica DIAN ──────────────────────────────── -->
+    <section class="config-card">
+      <header class="card-header">
+        <mat-icon class="card-icon">receipt_long</mat-icon>
+        <div>
+          <h2 class="card-title">Facturación electrónica DIAN</h2>
+          <p class="card-subtitle">Parámetros necesarios para la facturación electrónica.</p>
+        </div>
+      </header>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Resolución DIAN</mat-label>
+          <mat-select formControlName="dianResolutionId">
+            <mat-option [value]="''">— Sin resolución —</mat-option>
+            @for (res of dianResolutions.value() ?? []; track res.id) {
+              <mat-option [value]="res.id">{{ res.resolutionNumber }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>PIN Software</mat-label>
+          <input matInput formControlName="softwarePin" placeholder="PIN del software ante DIAN" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Certificado digital</mat-label>
+          <mat-select formControlName="certificateId">
+            <mat-option [value]="''">— Sin certificado —</mat-option>
+            @for (cert of certificates.value() ?? []; track cert.id) {
+              <mat-option [value]="cert.id">{{ cert.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <!-- ── Representante legal ───────────────────────────────────────── -->
+    <section class="config-card">
+      <header class="card-header">
+        <mat-icon class="card-icon">badge</mat-icon>
+        <div>
+          <h2 class="card-title">Representante legal</h2>
+          <p class="card-subtitle">Persona natural que representa legalmente a la empresa.</p>
+        </div>
+      </header>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label>Representante legal</mat-label>
+          <mat-select
+            formControlName="legalRepresentativeId"
+            (selectionChange)="onRepSelected($event.value)"
+          >
+            <mat-option [value]="''">— Sin representante —</mat-option>
+            @for (tp of naturalPersons(); track tp.id) {
+              <mat-option [value]="tp.id">
+                {{ tp.name }} {{ tp.lastName }} · {{ tp.numIdentification }}
+              </mat-option>
+            }
+          </mat-select>
+          <mat-hint>Se listan las personas naturales registradas como terceros.</mat-hint>
+        </mat-form-field>
+
+        @if (representative(); as rep) {
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre completo</mat-label>
+            <input matInput [value]="rep.name + ' ' + (rep.lastName ?? '')" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Documento</mat-label>
+            <input
+              matInput
+              [value]="rep.numIdentification + (rep.dv ? '-' + rep.dv : '')"
+              readonly
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput [value]="rep.phone ?? '—'" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Correo electrónico</mat-label>
+            <input matInput [value]="rep.email ?? '—'" readonly />
+          </mat-form-field>
         }
-      </mat-select>
-    </mat-form-field>
+      </div>
+    </section>
 
-    <mat-form-field appearance="outline">
-      <mat-label>URL del logo</mat-label>
-      <input matInput formControlName="logoUrl" placeholder="Ej: https://empresa.com/logo.png" />
-    </mat-form-field>
+    <!-- ── Retenciones (tasa global) ─────────────────────────────────── -->
+    <section class="config-card">
+      <header class="card-header">
+        <mat-icon class="card-icon">fact_check</mat-icon>
+        <div>
+          <h2 class="card-title">Retenciones</h2>
+          <p class="card-subtitle">Tasa global de retención en la fuente aplicada a las compras.</p>
+        </div>
+      </header>
 
-    <h3 class="section-title">Intereses de mora</h3>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Tasa interés moratorio (%)</mat-label>
-      <input matInput type="number" formControlName="moratoryInterestRate" step="0.1" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Días de gracia</mat-label>
-      <input matInput type="number" formControlName="interestGraceDays" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Frecuencia de interés compuesto</mat-label>
-      <mat-select formControlName="interestCompoundFrequency">
-        <mat-option value="NONE">Simple (sin capitalización)</mat-option>
-        <mat-option value="DAILY">Diaria</mat-option>
-        <mat-option value="MONTHLY">Mensual</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <h3 class="section-title">Facturación Electrónica DIAN</h3>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Resolución DIAN</mat-label>
-      <mat-select formControlName="dianResolutionId">
-        <mat-option [value]="''">— Sin resolución —</mat-option>
-        @for (res of dianResolutions(); track res.id) {
-          <mat-option [value]="res.id">{{ res.resolutionNumber }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>PIN Software</mat-label>
-      <input matInput formControlName="softwarePin" placeholder="PIN del software ante DIAN" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Certificado Digital</mat-label>
-      <mat-select formControlName="certificateId">
-        <mat-option [value]="''">— Sin certificado —</mat-option>
-        @for (cert of certificates(); track cert.id) {
-          <mat-option [value]="cert.id">{{ cert.name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Tasa retefuente en compras (%)</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="purchaseRetefuenteRate"
+            step="0.01"
+            min="0"
+          />
+        </mat-form-field>
+      </div>
+    </section>
 
     <div class="form-actions">
+      <button mat-button type="button" (click)="cancel()" [disabled]="saving() || loading()">
+        Cancelar
+      </button>
       <button mat-flat-button color="primary" type="submit" [disabled]="saving() || loading()">
         @if (saving()) {
           <mat-spinner diameter="20"></mat-spinner>
@@ -146,119 +341,130 @@
     </div>
   </form>
 
-  <!-- Retenciones en la fuente -->
-  <h3 class="section-title">Retenciones en la fuente (compras)</h3>
-
-  @if (retentionLoading()) {
-    <div class="loading-spinner"><mat-spinner diameter="30"></mat-spinner></div>
-  }
-
-  @if (!editingRetentionId()) {
-    <button mat-stroked-button type="button" (click)="startCreate()" class="add-retention-btn">
-      <mat-icon>add</mat-icon> Nueva retención
-    </button>
-  }
-
-  @if (editingRetentionId() !== undefined) {
-    <form [formGroup]="retentionForm" (ngSubmit)="saveRetention()" class="retention-edit-form">
-      <div class="retention-edit-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Código</mat-label>
-          <input matInput formControlName="code" placeholder="Ej: RENTA_COMPRAS" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Nombre del concepto</mat-label>
-          <input matInput formControlName="name" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Tasa (%)</mat-label>
-          <input matInput type="number" formControlName="rate" step="0.01" min="0" max="100" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Base mínima ($)</mat-label>
-          <input matInput type="number" formControlName="baseMin" step="0.01" min="0" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Régimen del proveedor</mat-label>
-          <mat-select formControlName="appliesToTaxRegime">
-            <mat-option value="">— Todos —</mat-option>
-            <mat-option value="COMUN">Régimen común</mat-option>
-            <mat-option value="SIMPLIFICADO">Régimen simplificado</mat-option>
-            <mat-option value="ESPECIAL">Régimen especial</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Tipo de persona</mat-label>
-          <mat-select formControlName="appliesToPersonType">
-            <mat-option value="">— Todas —</mat-option>
-            <mat-option value="NATURAL">Natural</mat-option>
-            <mat-option value="JURIDICA">Jurídica</mat-option>
-          </mat-select>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Descripción</mat-label>
-          <textarea matInput formControlName="description" rows="2"></textarea>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Orden</mat-label>
-          <input matInput type="number" formControlName="sortOrder" />
-        </mat-form-field>
+  <!-- ── Retenciones configuradas (CRUD) ────────────────────────────── -->
+  <section class="config-card">
+    <header class="card-header">
+      <mat-icon class="card-icon">list_alt</mat-icon>
+      <div>
+        <h2 class="card-title">Retenciones configuradas</h2>
+        <p class="card-subtitle">Conceptos de retención en la fuente definidos para la empresa.</p>
       </div>
-      <div class="retention-edit-actions">
-        <button mat-flat-button color="primary" type="submit" [disabled]="retentionForm.invalid">
-          {{ editingRetentionId() ? 'Actualizar' : 'Crear' }}
-        </button>
-        <button mat-button type="button" (click)="cancelRetentionEdit()">Cancelar</button>
-      </div>
-    </form>
-  }
+    </header>
 
-  @if (retentions().length > 0) {
-    <div class="retention-table-wrapper">
-      <table class="retention-table">
-        <thead>
-          <tr>
-            <th>Concepto</th>
-            <th>Tasa</th>
-            <th>Base mín</th>
-            <th>Régimen</th>
-            <th>Activo</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (r of retentions(); track r.id) {
+    @if (retentionLoading()) {
+      <div class="loading-spinner"><mat-spinner diameter="30"></mat-spinner></div>
+    }
+
+    @if (!editingRetentionId()) {
+      <button mat-stroked-button type="button" (click)="startCreate()" class="add-retention-btn">
+        <mat-icon>add</mat-icon> Agregar retención
+      </button>
+    }
+
+    @if (editingRetentionId() !== undefined) {
+      <form [formGroup]="retentionForm" (ngSubmit)="saveRetention()" class="retention-edit-form">
+        <div class="retention-edit-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Código</mat-label>
+            <input matInput formControlName="code" placeholder="Ej: RENTA_COMPRAS" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre del concepto</mat-label>
+            <input matInput formControlName="name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tasa (%)</mat-label>
+            <input matInput type="number" formControlName="rate" step="0.01" min="0" max="100" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Base mínima ($)</mat-label>
+            <input matInput type="number" formControlName="baseMin" step="0.01" min="0" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Régimen del proveedor</mat-label>
+            <mat-select formControlName="appliesToTaxRegime">
+              <mat-option value="">— Todos —</mat-option>
+              <mat-option value="COMUN">Régimen común</mat-option>
+              <mat-option value="SIMPLIFICADO">Régimen simplificado</mat-option>
+              <mat-option value="ESPECIAL">Régimen especial</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de persona</mat-label>
+            <mat-select formControlName="appliesToPersonType">
+              <mat-option value="">— Todas —</mat-option>
+              <mat-option value="NATURAL">Natural</mat-option>
+              <mat-option value="JURIDICA">Jurídica</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Descripción</mat-label>
+            <textarea matInput formControlName="description" rows="2"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Orden</mat-label>
+            <input matInput type="number" formControlName="sortOrder" />
+          </mat-form-field>
+        </div>
+        <div class="retention-edit-actions">
+          <button mat-flat-button color="primary" type="submit" [disabled]="retentionForm.invalid">
+            {{ editingRetentionId() ? 'Actualizar' : 'Crear' }}
+          </button>
+          <button mat-button type="button" (click)="cancelRetentionEdit()">Cancelar</button>
+        </div>
+      </form>
+    }
+
+    @if (retentions().length > 0) {
+      <div class="retention-table-wrapper">
+        <table class="retention-table">
+          <thead>
             <tr>
-              <td>
-                <span class="ret-name">{{ r.name }}</span>
-                <span class="ret-code">{{ r.code }}</span>
-              </td>
-              <td>{{ r.rate }}%</td>
-              <td>{{ r.baseMin | number: '1.0-0' }}</td>
-              <td>{{ r.appliesToTaxRegime || 'Todos' }}</td>
-              <td>
-                <mat-slide-toggle
-                  [checked]="r.active"
-                  (change)="toggleRetention(r)"
-                ></mat-slide-toggle>
-              </td>
-              <td class="ret-actions">
-                <button mat-icon-button (click)="startEdit(r)" aria-label="Editar">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  color="warn"
-                  (click)="deleteRetention(r)"
-                  aria-label="Eliminar"
-                >
-                  <mat-icon>delete_outline</mat-icon>
-                </button>
-              </td>
+              <th>Concepto</th>
+              <th>Código</th>
+              <th>Tasa</th>
+              <th>Base mín</th>
+              <th>Régimen</th>
+              <th>Activo</th>
+              <th></th>
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
+          </thead>
+          <tbody>
+            @for (r of retentions(); track r.id) {
+              <tr>
+                <td>
+                  <span class="ret-name">{{ r.name }}</span>
+                </td>
+                <td>
+                  <span class="ret-code">{{ r.code }}</span>
+                </td>
+                <td>{{ r.rate }}%</td>
+                <td>{{ r.baseMin | number: '1.0-0' }}</td>
+                <td>{{ r.appliesToTaxRegime || 'Todos' }}</td>
+                <td>
+                  <mat-slide-toggle
+                    [checked]="r.active"
+                    (change)="toggleRetention(r)"
+                  ></mat-slide-toggle>
+                </td>
+                <td class="ret-actions">
+                  <button mat-icon-button (click)="startEdit(r)" aria-label="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    (click)="deleteRetention(r)"
+                    aria-label="Eliminar"
+                  >
+                    <mat-icon>delete_outline</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
 </div>

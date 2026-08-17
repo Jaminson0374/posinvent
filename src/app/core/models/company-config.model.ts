@@ -5,7 +5,13 @@ export interface CompanyConfigRequest {
   phone: string | null;
   email: string | null;
   economicActivity: string | null;
-  taxRegime: string | null;
+  personType: string | null;
+  commonName: string | null;
+  manejaAiu: boolean;
+  taxResponsibilityCodes: string[];
+  fiscalResponsibilityCodes: string[];
+  taxCodes: string[];
+  icaRate: number | null;
   currency: string;
   mainWarehouseId: string | null;
   logoUrl: string | null;
@@ -18,6 +24,7 @@ export interface CompanyConfigRequest {
   dianResolutionId: string | null;
   softwarePin: string | null;
   certificateId: string | null;
+  legalRepresentativeId: string | null;
   purchaseRetefuenteRate: number | null;
 }
 
@@ -29,7 +36,13 @@ export interface CompanyConfigResponse {
   phone: string | null;
   email: string | null;
   economicActivity: string | null;
-  taxRegime: string | null;
+  personType: string | null;
+  commonName: string | null;
+  manejaAiu: boolean;
+  taxResponsibilityCodes: string[];
+  fiscalResponsibilityCodes: string[];
+  taxCodes: string[];
+  icaRate: number | null;
   currency: string;
   mainWarehouseId: string | null;
   logoUrl: string | null;
@@ -42,6 +55,7 @@ export interface CompanyConfigResponse {
   dianResolutionId: string | null;
   softwarePin: string | null;
   certificateId: string | null;
+  legalRepresentativeId: string | null;
   purchaseRetefuenteRate: number | null;
   createdBy: string;
   createdAt: string;
