@@ -12,6 +12,7 @@ export interface PucAccountRequest {
   accountClass: number;
   accountNature: string;
   allowsTransactions: boolean;
+  active: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +54,12 @@ export class PucAccountService {
 
   deactivate(id: string): Observable<void> {
     return this.http.delete<void>(`/api/v1/puc-accounts/${id}`);
+  }
+
+  checkCode(code: string): Observable<{ code: string; available: boolean }> {
+    return this.http.get<{ code: string; available: boolean }>(
+      `/api/v1/puc-accounts/check-code?code=${encodeURIComponent(code)}`,
+    );
   }
 
   tree(search?: string): Observable<PucAccount[]> {
