@@ -75,9 +75,9 @@ The retried unit of work MUST NOT duplicate kardex movements (`InventoryMovement
 - WHEN the retry completes
 - THEN the audit store contains exactly one audit record for the operation
 
-#### Scenario: CostingService delete-all + re-insert
+#### Scenario: CostingOrchestrator delete-all + re-insert
 
-- GIVEN `CostingService` performs delete-all + re-insert of cost layers
+- GIVEN `CostingOrchestrator` performs delete-all + re-insert of cost layers
 - WHEN a retry occurs
 - THEN no duplicate or orphaned cost layers are produced (idempotent re-insert)
 
@@ -132,7 +132,7 @@ None.
 
 ## Non-goals (explicitly out of scope)
 
-- **C2** — costing concurrency (beyond the `CostingService` retry already in scope).
+- **C2** — costing concurrency (beyond the `CostingOrchestrator` retry already in scope).
 - **C3** — role-based access control.
 - **A1** — hexagonal layering refactor.
 - **A3** — `@Transactional` self-invocation.
