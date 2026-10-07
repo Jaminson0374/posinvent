@@ -45,3 +45,10 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Local artifacts / nested repositories
+/engram/
+/.engram/
+/tmp_build_output.txt
+/tmp_test_output.txt
+/odd/
