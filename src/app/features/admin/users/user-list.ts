@@ -48,6 +48,7 @@ export class UserListComponent {
   readonly roleOptions: ReadonlyArray<{ value: string; label: string }> = [
     { value: '', label: 'Todos los roles' },
     { value: 'ADMIN', label: 'ADMIN' },
+    { value: 'ALMACENISTA', label: 'ALMACENISTA' },
     { value: 'CAJERO', label: 'CAJERO' },
     { value: 'CARNICERO', label: 'CARNICERO' },
     { value: 'AUXILIAR', label: 'AUXILIAR' },
