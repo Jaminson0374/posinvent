@@ -44,90 +44,91 @@
           }
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="span-2">
-          <mat-label>Razón social</mat-label>
-          <input matInput formControlName="companyName" placeholder="Ej: Carnes del Valle S.A.S." />
-          @if (form.controls.companyName.invalid && form.controls.companyName.touched) {
-            <mat-error>El nombre de la empresa es requerido.</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="span-2">
-          <mat-label>Nombre comercial</mat-label>
-          <input matInput formControlName="commonName" placeholder="Ej: Carnes del Valle" />
-        </mat-form-field>
-
-        <div class="nit-row">
-          <mat-form-field appearance="outline" class="nit-field">
-            <mat-label>NIT</mat-label>
-            <input matInput formControlName="nit" placeholder="Ej: 900.123.456" />
-            <mat-hint>El DV se calcula automáticamente.</mat-hint>
-            @if (form.controls.nit.invalid && form.controls.nit.touched) {
-              <mat-error>El NIT es requerido.</mat-error>
+        <div class="nit-social-row">
+          <mat-form-field appearance="outline" class="social-field">
+            <mat-label>Razón social</mat-label>
+            <input
+              matInput
+              formControlName="companyName"
+              placeholder="Ej: Carnes del Valle S.A.S."
+            />
+            @if (form.controls.companyName.invalid && form.controls.companyName.touched) {
+              <mat-error>El nombre de la empresa es requerido.</mat-error>
             }
           </mat-form-field>
-          <div class="dv-box" [class.dv-box--valid]="dv()">
-            <span class="dv-label">DV</span>
-            <span class="dv-value">{{ dv() || '—' }}</span>
-            @if (dv()) {
-              <mat-icon class="dv-check">check_circle</mat-icon>
-            }
+
+          <div class="nit-row">
+            <mat-form-field appearance="outline" class="nit-field">
+              <mat-label>NIT</mat-label>
+              <input matInput formControlName="nit" placeholder="Ej: 900.123.456" />
+              @if (form.controls.nit.invalid && form.controls.nit.touched) {
+                <mat-error>El NIT es requerido.</mat-error>
+              }
+            </mat-form-field>
+            <div class="dv-box" [class.dv-box--valid]="dv()">
+              <span class="dv-label">DV</span>
+              <span class="dv-value">{{ dv() || '—' }}</span>
+              @if (dv()) {
+                <mat-icon class="dv-check">check_circle</mat-icon>
+              }
+            </div>
           </div>
         </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Dirección</mat-label>
-          <input matInput formControlName="address" placeholder="Ej: Calle 123 #45-67" />
-        </mat-form-field>
+        <div class="field-row field-row--75-25">
+          <mat-form-field appearance="outline">
+            <mat-label>Nombre comercial</mat-label>
+            <input matInput formControlName="commonName" placeholder="Ej: Carnes del Valle" />
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Teléfono</mat-label>
-          <input matInput formControlName="phone" placeholder="Ej: +57 300 123 4567" />
-        </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Teléfono</mat-label>
+            <input matInput formControlName="phone" placeholder="Ej: +57 300 123 4567" />
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Correo electrónico</mat-label>
-          <input
-            matInput
-            formControlName="email"
-            placeholder="Ej: contacto@empresa.com"
-            type="email"
-          />
-          @if (form.controls.email.invalid && form.controls.email.touched) {
-            <mat-error>Ingrese un correo electrónico válido.</mat-error>
-          }
-        </mat-form-field>
+        <div class="field-row field-row--75-25">
+          <mat-form-field appearance="outline">
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="address" placeholder="Ej: Calle 123 #45-67" />
+          </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Moneda</mat-label>
-          <mat-select formControlName="currency">
-            @for (c of currencies; track c.code) {
-              <mat-option [value]="c.code">{{ c.label }}</mat-option>
+          <mat-form-field appearance="outline">
+            <mat-label>Moneda</mat-label>
+            <mat-select formControlName="currency">
+              @for (c of currencies; track c.code) {
+                <mat-option [value]="c.code">{{ c.label }}</mat-option>
+              }
+            </mat-select>
+            @if (form.controls.currency.invalid && form.controls.currency.touched) {
+              <mat-error>La moneda es requerida.</mat-error>
             }
-          </mat-select>
-          @if (form.controls.currency.invalid && form.controls.currency.touched) {
-            <mat-error>La moneda es requerida.</mat-error>
-          }
-        </mat-form-field>
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Bodega principal</mat-label>
-          <mat-select formControlName="mainWarehouseId">
-            <mat-option [value]="''">— Sin bodega —</mat-option>
-            @for (wh of warehouses(); track wh.id) {
-              <mat-option [value]="wh.id">{{ wh.name }}</mat-option>
+        <div class="field-row field-row--50-50">
+          <mat-form-field appearance="outline">
+            <mat-label>URL del logo</mat-label>
+            <input
+              matInput
+              formControlName="logoUrl"
+              placeholder="Ej: https://empresa.com/logo.png"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Correo electrónico</mat-label>
+            <input
+              matInput
+              formControlName="email"
+              placeholder="Ej: contacto@empresa.com"
+              type="email"
+            />
+            @if (form.controls.email.invalid && form.controls.email.touched) {
+              <mat-error>Ingrese un correo electrónico válido.</mat-error>
             }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>URL del logo</mat-label>
-          <input
-            matInput
-            formControlName="logoUrl"
-            placeholder="Ej: https://empresa.com/logo.png"
-          />
-        </mat-form-field>
+          </mat-form-field>
+        </div>
       </div>
     </section>
 
@@ -199,7 +200,7 @@
         </div>
 
         <mat-form-field appearance="outline" class="span-2">
-          <mat-label>Impuestos</mat-label>
+          <mat-label>Impuestos y Retenciones</mat-label>
           <mat-select formControlName="taxCodes" multiple>
             @for (t of taxes(); track t.code) {
               <mat-option [value]="t.code">{{ t.name }}</mat-option>
@@ -258,47 +259,44 @@
       </header>
 
       <div class="form-grid">
-        <mat-form-field appearance="outline" class="span-2">
-          <mat-label>Representante legal</mat-label>
-          <mat-select
-            formControlName="legalRepresentativeId"
-            (selectionChange)="onRepSelected($event.value)"
-          >
-            <mat-option [value]="''">— Sin representante —</mat-option>
-            @for (tp of naturalPersons(); track tp.id) {
-              <mat-option [value]="tp.id">
-                {{ tp.name }} {{ tp.lastName }} · {{ tp.numIdentification }}
-              </mat-option>
-            }
-          </mat-select>
-          <mat-hint>Se listan las personas naturales registradas como terceros.</mat-hint>
-        </mat-form-field>
-
-        @if (representative(); as rep) {
+        <div class="rep-row rep-row--first">
           <mat-form-field appearance="outline">
-            <mat-label>Nombre completo</mat-label>
-            <input matInput [value]="rep.name + ' ' + (rep.lastName ?? '')" readonly />
+            <mat-label>Tipo de documento</mat-label>
+            <mat-select formControlName="legalRepresentativeIdentificationTypeId">
+              <mat-option [value]="''">— Sin seleccionar —</mat-option>
+              @for (t of identificationTypes(); track t.id) {
+                <mat-option [value]="t.id">{{ t.code }} — {{ t.name }}</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Documento</mat-label>
-            <input
-              matInput
-              [value]="rep.numIdentification + (rep.dv ? '-' + rep.dv : '')"
-              readonly
-            />
+            <mat-label>Número de documento</mat-label>
+            <input matInput formControlName="legalRepresentativeDocumentNumber" />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Teléfono</mat-label>
-            <input matInput [value]="rep.phone ?? '—'" readonly />
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="legalRepresentativeName" />
+          </mat-form-field>
+        </div>
+
+        <div class="rep-row rep-row--second">
+          <mat-form-field appearance="outline">
+            <mat-label>Cargo</mat-label>
+            <input matInput formControlName="legalRepresentativePosition" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="legalRepresentativeAddress" />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Correo electrónico</mat-label>
-            <input matInput [value]="rep.email ?? '—'" readonly />
+            <input matInput formControlName="legalRepresentativeEmail" type="email" />
           </mat-form-field>
-        }
+        </div>
       </div>
     </section>
 

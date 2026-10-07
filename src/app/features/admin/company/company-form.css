@@ -1,5 +1,5 @@
 .company-config-container {
-  max-width: 960px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -95,12 +95,64 @@
   gap: 0.75rem 1rem;
 }
 
+/* ── Representante legal: 2 filas de 3 columnas (25/25/50 y 25/50/25) ── */
+
+.rep-row {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.75rem 1rem;
+  align-items: start;
+}
+
+.rep-row--first {
+  grid-template-columns: 1fr 1fr 2fr;
+}
+
+.rep-row--second {
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
 .form-grid mat-form-field {
   width: 100%;
 }
 
 .span-2 {
   grid-column: 1 / -1;
+}
+
+/* ── Filas de dos columnas (75/25 y 50/50) ───────────────────── */
+
+.field-row {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+.field-row--75-25 {
+  grid-template-columns: 3fr 1fr;
+}
+
+.field-row--50-50 {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ── Inputs: smaller font matching labels ──────────────────────── */
+
+::ng-deep .company-config-container .mat-mdc-input-element,
+::ng-deep .company-config-container .mat-mdc-select-value-text {
+  font-size: 14px !important;
+  font-family: Roboto, 'Helvetica Neue', sans-serif !important;
+}
+
+/* ── Razón social + NIT en la misma fila (75% / 25%) ─────────── */
+
+.nit-social-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 1rem;
+  align-items: start;
 }
 
 /* ── NIT + DV ────────────────────────────────────────────────── */
@@ -127,6 +179,8 @@
   border-radius: 8px;
   background: #f8fafc;
   color: #94a3b8;
+  font-family: 'NunitoSans', sans-serif;
+  font-size: small;
 }
 
 .dv-label {
@@ -137,7 +191,7 @@
 }
 
 .dv-value {
-  font-size: 1.25rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -244,6 +298,20 @@
 
 @media (max-width: 900px) {
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rep-row--first,
+  .rep-row--second {
+    grid-template-columns: 1fr;
+  }
+
+  .nit-social-row {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row--75-25,
+  .field-row--50-50 {
     grid-template-columns: 1fr;
   }
 
