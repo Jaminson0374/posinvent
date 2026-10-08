@@ -88,7 +88,7 @@ export class ShellComponent {
       label: 'Logística',
       icon: 'local_shipping',
       route: '/logistica',
-      roles: ['ADMIN', 'AUXILIAR'],
+      roles: ['ADMIN', 'AUXILIAR', 'ALMACENISTA'],
       children: [
         { label: 'Recepciones', icon: 'download', route: '/logistica/recepciones' },
         { label: 'Picking', icon: 'list_alt', route: '/logistica/picking' },
@@ -101,7 +101,7 @@ export class ShellComponent {
       label: 'Inventarios',
       icon: 'inventory_2',
       route: '/inventario',
-      roles: ['ADMIN', 'CARNICERO', 'AUXILIAR'],
+      roles: ['ADMIN', 'CARNICERO', 'AUXILIAR', 'ALMACENISTA'],
       children: [
         { label: 'Artículos', icon: 'inventory', route: '/inventario/articulos' },
         { label: 'Bodegas', icon: 'warehouse', route: '/inventario/bodegas' },
