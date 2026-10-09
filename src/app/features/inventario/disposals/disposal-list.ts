@@ -76,8 +76,8 @@ export class DisposalListComponent implements OnInit {
 
   typeLabel(t: string): string {
     switch (t) {
-      case 'SANITARIO':
-        return 'Sanitario';
+      case 'DECOMISO_SANITARIO':
+        return 'Decomiso sanitario';
       case 'RESIDUO_VENDIBLE':
         return 'Residuo vendible';
       case 'MERMA_PROCESO':
@@ -89,7 +89,7 @@ export class DisposalListComponent implements OnInit {
 
   typeClass(t: string): string {
     switch (t) {
-      case 'SANITARIO':
+      case 'DECOMISO_SANITARIO':
         return 'chip-sanitario';
       case 'RESIDUO_VENDIBLE':
         return 'chip-residuo';
