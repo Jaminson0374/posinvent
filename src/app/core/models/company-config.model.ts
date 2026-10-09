@@ -24,7 +24,12 @@ export interface CompanyConfigRequest {
   dianResolutionId: string | null;
   softwarePin: string | null;
   certificateId: string | null;
-  legalRepresentativeId: string | null;
+  legalRepresentativeIdentificationTypeId: string | null;
+  legalRepresentativeDocumentNumber: string | null;
+  legalRepresentativeName: string | null;
+  legalRepresentativePosition: string | null;
+  legalRepresentativeAddress: string | null;
+  legalRepresentativeEmail: string | null;
   purchaseRetefuenteRate: number | null;
 }
 
@@ -55,7 +60,12 @@ export interface CompanyConfigResponse {
   dianResolutionId: string | null;
   softwarePin: string | null;
   certificateId: string | null;
-  legalRepresentativeId: string | null;
+  legalRepresentativeIdentificationTypeId: string | null;
+  legalRepresentativeDocumentNumber: string | null;
+  legalRepresentativeName: string | null;
+  legalRepresentativePosition: string | null;
+  legalRepresentativeAddress: string | null;
+  legalRepresentativeEmail: string | null;
   purchaseRetefuenteRate: number | null;
   createdBy: string;
   createdAt: string;

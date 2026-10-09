@@ -15,12 +15,8 @@ import type { MatAutocompleteSelectedEvent } from '@angular/material/autocomplet
 import { CompanyConfigService } from '../../../core/services/company-config.service';
 import { DianService } from '../../../core/services/dian.service';
 import { PurchaseRetentionConfigService } from '../../../core/services/purchase-retention-config.service';
-import { WarehouseService } from '../../../core/services/warehouse.service';
-import { Warehouse } from '../../../core/models/warehouse.model';
 import type { PurchaseRetentionConfig } from '../../../core/models/purchase-retention-config.model';
-import { ThirdPartyService } from '../../../core/services/third-party.service';
 import { CatalogService } from '../../../core/services/catalog.service';
-import type { ThirdParty } from '../../../core/models/third-party.model';
 import { calculateNitDv } from '../third-parties/utils/nit-dv.utils';
 import Swal from 'sweetalert2';
 
@@ -45,27 +41,18 @@ import Swal from 'sweetalert2';
 export class CompanyFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly companyConfigService = inject(CompanyConfigService);
-  private readonly warehouseService = inject(WarehouseService);
   private readonly dianService = inject(DianService);
-  private readonly thirdPartyService = inject(ThirdPartyService);
   private readonly catalogService = inject(CatalogService);
   readonly retentionService = inject(PurchaseRetentionConfigService);
 
   readonly saving = signal(false);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly warehouses = signal<Warehouse[]>([]);
   readonly dianResolutions = this.dianService.resolutions;
   readonly certificates = this.dianService.certificates;
   readonly retentions = signal<PurchaseRetentionConfig[]>([]);
   readonly retentionLoading = signal(false);
   readonly editingRetentionId = signal<string | null>(null);
-  readonly naturalPersons = signal<ThirdParty[]>([]);
-  readonly selectedRepId = signal<string | null>(null);
-  readonly representative = computed(() => {
-    const id = this.selectedRepId();
-    return id ? (this.naturalPersons().find((tp) => tp.id === id) ?? null) : null;
-  });
 
   readonly retentionForm = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.maxLength(30)]],
@@ -93,7 +80,7 @@ export class CompanyFormComponent {
     taxCodes: [[] as string[]],
     icaRate: [0 as number, []],
     currency: ['COP', [Validators.required, Validators.maxLength(3)]],
-    mainWarehouseId: ['' as string, []],
+    mainWarehouseId: ['' as string, []], // Oculto en UI; se conserva para round-trip.
     logoUrl: ['', [Validators.maxLength(500)]],
     // Los siguientes 6 campos existen en company_config y se persisten (round-trip),
     // pero NO se exponen en la UI por decisión del usuario. Se conservan en el
@@ -107,7 +94,12 @@ export class CompanyFormComponent {
     dianResolutionId: ['' as string, []],
     softwarePin: ['' as string, []],
     certificateId: ['' as string, []],
-    legalRepresentativeId: ['' as string, []],
+    legalRepresentativeIdentificationTypeId: ['' as string, []],
+    legalRepresentativeDocumentNumber: ['', [Validators.maxLength(40)]],
+    legalRepresentativeName: ['', [Validators.maxLength(200)]],
+    legalRepresentativePosition: ['', [Validators.maxLength(100)]],
+    legalRepresentativeAddress: ['', [Validators.maxLength(255)]],
+    legalRepresentativeEmail: ['', [Validators.email, Validators.maxLength(255)]],
     purchaseRetefuenteRate: [0 as number, []],
   });
 
@@ -147,6 +139,10 @@ export class CompanyFormComponent {
   );
   readonly taxes = computed(() => this.catalogService.taxes.value() ?? []);
 
+  readonly identificationTypes = computed(
+    () => this.catalogService.identificationTypes.value() ?? [],
+  );
+
   isTaxRespDisabled(code: string): boolean {
     const selected = this.form.controls.taxResponsibilityCodes.value ?? [];
     if (selected.includes(code)) return false;
@@ -183,10 +179,8 @@ export class CompanyFormComponent {
 
   constructor() {
     afterNextRender(() => {
-      this.loadWarehouses();
       this.loadConfig();
       this.loadRetentions();
-      this.loadNaturalPersons();
     });
   }
 
@@ -290,13 +284,6 @@ export class CompanyFormComponent {
 
   // ── Company config ──────────────────────────────────────────────────
 
-  private loadWarehouses(): void {
-    this.warehouseService.listAll().subscribe({
-      next: (warehouses) => this.warehouses.set(warehouses),
-      error: () => this.error.set('Error al cargar las bodegas.'),
-    });
-  }
-
   private loadConfig(): void {
     this.loading.set(true);
     this.companyConfigService.getConfig().subscribe({
@@ -327,10 +314,15 @@ export class CompanyFormComponent {
           dianResolutionId: config.dianResolutionId ?? '',
           softwarePin: config.softwarePin ?? '',
           certificateId: config.certificateId ?? '',
-          legalRepresentativeId: config.legalRepresentativeId ?? '',
+          legalRepresentativeIdentificationTypeId:
+            config.legalRepresentativeIdentificationTypeId ?? '',
+          legalRepresentativeDocumentNumber: config.legalRepresentativeDocumentNumber ?? '',
+          legalRepresentativeName: config.legalRepresentativeName ?? '',
+          legalRepresentativePosition: config.legalRepresentativePosition ?? '',
+          legalRepresentativeAddress: config.legalRepresentativeAddress ?? '',
+          legalRepresentativeEmail: config.legalRepresentativeEmail ?? '',
           purchaseRetefuenteRate: config.purchaseRetefuenteRate ?? 0,
         });
-        this.selectedRepId.set(config.legalRepresentativeId ?? null);
         this.snapshot = this.form.getRawValue();
         this.loading.set(false);
       },
@@ -375,7 +367,12 @@ export class CompanyFormComponent {
       dianResolutionId: v.dianResolutionId || null,
       softwarePin: v.softwarePin || null,
       certificateId: v.certificateId || null,
-      legalRepresentativeId: v.legalRepresentativeId || null,
+      legalRepresentativeIdentificationTypeId: v.legalRepresentativeIdentificationTypeId || null,
+      legalRepresentativeDocumentNumber: v.legalRepresentativeDocumentNumber || null,
+      legalRepresentativeName: v.legalRepresentativeName || null,
+      legalRepresentativePosition: v.legalRepresentativePosition || null,
+      legalRepresentativeAddress: v.legalRepresentativeAddress || null,
+      legalRepresentativeEmail: v.legalRepresentativeEmail || null,
       purchaseRetefuenteRate: v.purchaseRetefuenteRate || null,
     };
 
@@ -410,24 +407,12 @@ export class CompanyFormComponent {
   cancel(): void {
     if (this.snapshot) {
       this.form.reset(this.snapshot);
-      this.selectedRepId.set(this.snapshot.legalRepresentativeId || null);
     }
     this.error.set(null);
   }
 
-  onRepSelected(id: string): void {
-    this.selectedRepId.set(id || null);
-  }
-
   onCiiuSelected(event: MatAutocompleteSelectedEvent): void {
     this.ciiuFilter.set(event.option.value as string);
-  }
-
-  private loadNaturalPersons(): void {
-    this.thirdPartyService.getNaturalPersons().subscribe({
-      next: (list) => this.naturalPersons.set(list),
-      error: () => this.error.set('Error al cargar los terceros (personas naturales).'),
-    });
   }
 
   // El NIT se guarda en BD como "base-DV". El formulario expone solo la base y el
