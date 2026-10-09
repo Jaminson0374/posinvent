@@ -392,26 +392,26 @@ export const routes: Routes = [
           {
             path: 'kardex',
             loadComponent: () =>
-              import('./features/inventory/kardex/kardex-list').then((m) => m.KardexListComponent),
+              import('./features/inventario/kardex/kardex-list').then((m) => m.KardexListComponent),
           },
           {
             path: 'ajustes',
             loadComponent: () =>
-              import('./features/inventory/adjustments/adjustment-list').then(
+              import('./features/inventario/adjustments/adjustment-list').then(
                 (m) => m.AdjustmentListComponent,
               ),
           },
           {
             path: 'ajustes/nuevo',
             loadComponent: () =>
-              import('./features/inventory/adjustments/adjustment-form').then(
+              import('./features/inventario/adjustments/adjustment-form').then(
                 (m) => m.AdjustmentFormComponent,
               ),
           },
           {
             path: 'stock-manual',
             loadComponent: () =>
-              import('./features/inventory/stock-manual/stock-manual').then(
+              import('./features/inventario/stock-manual/stock-manual').then(
                 (m) => m.StockManualComponent,
               ),
           },
@@ -421,21 +421,21 @@ export const routes: Routes = [
               {
                 path: '',
                 loadComponent: () =>
-                  import('./features/inventory/transfers/transfer-list').then(
+                  import('./features/inventario/transfers/transfer-list').then(
                     (m) => m.TransferListComponent,
                   ),
               },
               {
                 path: 'nuevo',
                 loadComponent: () =>
-                  import('./features/inventory/transfers/transfer-form').then(
+                  import('./features/inventario/transfers/transfer-form').then(
                     (m) => m.TransferFormComponent,
                   ),
               },
               {
                 path: ':id',
                 loadComponent: () =>
-                  import('./features/inventory/transfers/transfer-detail').then(
+                  import('./features/inventario/transfers/transfer-detail').then(
                     (m) => m.TransferDetailComponent,
                   ),
               },
@@ -447,14 +447,14 @@ export const routes: Routes = [
               {
                 path: '',
                 loadComponent: () =>
-                  import('./features/inventory/disposals/disposal-list').then(
+                  import('./features/inventario/disposals/disposal-list').then(
                     (m) => m.DisposalListComponent,
                   ),
               },
               {
                 path: 'nuevo',
                 loadComponent: () =>
-                  import('./features/inventory/disposals/disposal-form').then(
+                  import('./features/inventario/disposals/disposal-form').then(
                     (m) => m.DisposalFormComponent,
                   ),
               },
