@@ -123,6 +123,7 @@ export class ShellComponent {
           icon: 'delete_forever',
           route: '/inventario/decomisos',
         },
+        { label: 'Vencimientos', icon: 'event_busy', route: '/inventario/vencimientos' },
         { label: 'Producción', icon: 'factory', route: '/produccion/ordenes' },
       ],
     },
