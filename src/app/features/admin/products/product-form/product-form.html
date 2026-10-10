@@ -502,14 +502,18 @@
             <mat-icon>layers</mat-icon>
             Inventario y Lotes
           </ng-template>
-          <app-product-inventory
-            [form]="form"
-            [warehousesArray]="warehousesArray"
-            [warehouseList]="warehouseService.warehouses.value() ?? []"
-            [isEditing]="isEditing()"
-            (addWarehouse)="addWarehouse()"
-            (removeWarehouse)="removeWarehouse($event)"
-          />
+          @defer {
+            <app-product-inventory
+              [form]="form"
+              [warehousesArray]="warehousesArray"
+              [warehouseList]="warehouseService.warehouses.value() ?? []"
+              [isEditing]="isEditing()"
+              (addWarehouse)="addWarehouse()"
+              (removeWarehouse)="removeWarehouse($event)"
+            />
+          } @placeholder (minimum 200ms) {
+            <div class="tab-content"></div>
+          }
         </mat-tab>
 
         <!-- ══ TAB 3 — CONTABILIZACIÓN ═══════════════════════════════ -->
@@ -518,13 +522,17 @@
             <mat-icon>account_balance</mat-icon>
             Contabilización
           </ng-template>
-          <app-product-accounting
-            [form]="form"
-            [incomeAccounts]="pucService.incomeAccounts.value() ?? []"
-            [inventoryAccounts]="pucService.inventoryAccounts.value() ?? []"
-            [costAccounts]="pucService.costAccounts.value() ?? []"
-            [templates]="templateService.templates.value() ?? []"
-          />
+          @defer {
+            <app-product-accounting
+              [form]="form"
+              [incomeAccounts]="pucService.incomeAccounts.value() ?? []"
+              [inventoryAccounts]="pucService.inventoryAccounts.value() ?? []"
+              [costAccounts]="pucService.costAccounts.value() ?? []"
+              [templates]="templateService.templates.value() ?? []"
+            />
+          } @placeholder (minimum 200ms) {
+            <div class="tab-content"></div>
+          }
         </mat-tab>
 
         <!-- ══ TAB 4 — PROVEEDORES ════════════════════════════════════ -->
@@ -533,13 +541,17 @@
             <mat-icon>local_shipping</mat-icon>
             Proveedores
           </ng-template>
-          <app-product-suppliers
-            [suppliersArray]="suppliersArray"
-            [supplierList]="safeSupplierOptions()"
-            [isEditing]="isEditing()"
-            (addSupplier)="addSupplier()"
-            (removeSupplier)="removeSupplier($event)"
-          />
+          @defer {
+            <app-product-suppliers
+              [suppliersArray]="suppliersArray"
+              [supplierList]="safeSupplierOptions()"
+              [isEditing]="isEditing()"
+              (addSupplier)="addSupplier()"
+              (removeSupplier)="removeSupplier($event)"
+            />
+          } @placeholder (minimum 200ms) {
+            <div class="tab-content"></div>
+          }
         </mat-tab>
 
         <!-- ══ TAB 5 — ESPECIFICACIONES ═══════════════════════════════ -->
@@ -569,11 +581,22 @@
           </div>
 
           @if (showPresentationsTab()) {
-            <app-presentations-tab [productId]="loadedId()!" [formArray]="presentationsFormArray" />
+            @defer {
+              <app-presentations-tab
+                [productId]="loadedId()!"
+                [formArray]="presentationsFormArray"
+              />
+            } @placeholder (minimum 200ms) {
+              <div class="tab-content"></div>
+            }
           }
 
           @if (showFormulaTab()) {
-            <app-formula-tab [productId]="loadedId()!" [formArray]="formulasFormArray" />
+            @defer {
+              <app-formula-tab [productId]="loadedId()!" [formArray]="formulasFormArray" />
+            } @placeholder (minimum 200ms) {
+              <div class="tab-content"></div>
+            }
           }
         </mat-tab>
 

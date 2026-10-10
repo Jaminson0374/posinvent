@@ -155,35 +155,42 @@
   </div>
 
   <!-- ==================== ROW 2: CHARTS ==================== -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-    <!-- Sales Chart -->
-    <mat-card class="chart-card !rounded-lg">
-      <mat-card-header class="!pb-1">
-        <mat-card-title class="!text-base !font-semibold text-slate-700">
-          Ventas &uacute;ltimos 30 d&iacute;as
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content class="!pt-2 flex items-center justify-center">
-        <div class="chart-wrapper">
-          <canvas #salesChart></canvas>
-        </div>
-      </mat-card-content>
-    </mat-card>
+  @defer (on viewport) {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <!-- Sales Chart -->
+      <mat-card class="chart-card !rounded-lg">
+        <mat-card-header class="!pb-1">
+          <mat-card-title class="!text-base !font-semibold text-slate-700">
+            Ventas &uacute;ltimos 30 d&iacute;as
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="!pt-2 flex items-center justify-center">
+          <div class="chart-wrapper">
+            <canvas #salesChart></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
 
-    <!-- Products Chart -->
-    <mat-card class="chart-card !rounded-lg">
-      <mat-card-header class="!pb-1">
-        <mat-card-title class="!text-base !font-semibold text-slate-700">
-          Top 10 Productos
-        </mat-card-title>
-      </mat-card-header>
-      <mat-card-content class="!pt-2 flex items-center justify-center">
-        <div class="chart-wrapper">
-          <canvas #productsChart></canvas>
-        </div>
-      </mat-card-content>
-    </mat-card>
-  </div>
+      <!-- Products Chart -->
+      <mat-card class="chart-card !rounded-lg">
+        <mat-card-header class="!pb-1">
+          <mat-card-title class="!text-base !font-semibold text-slate-700">
+            Top 10 Productos
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="!pt-2 flex items-center justify-center">
+          <div class="chart-wrapper">
+            <canvas #productsChart></canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  } @placeholder (minimum 200ms) {
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+      <div class="chart-card !rounded-lg"></div>
+      <div class="chart-card !rounded-lg"></div>
+    </div>
+  }
 
   <!-- ==================== ROW 3: ACTIONS + ACTIVITY ==================== -->
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
