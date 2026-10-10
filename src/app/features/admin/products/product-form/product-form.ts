@@ -394,7 +394,7 @@ export class ProductFormComponent implements OnInit {
   readonly canGuardar = computed(() => this.isEditing() && !this.saving());
   readonly canCancelar = computed(() => this.isEditing());
   readonly canBuscar = computed(() => this.mode() !== 'edit');
-  readonly showPresentationsTab = computed(() => this.mode() === 'view' && !!this.loadedId());
+  readonly showPresentationsTab = computed(() => !!this.loadedId() && this.mode() !== 'new');
   readonly showFormulaTab = computed(() => this.showPresentationsTab() && this.isFormulaOrCombo());
 
   // ── Summary sidebar data ──────────────────────────────────────

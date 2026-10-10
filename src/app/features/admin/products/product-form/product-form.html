@@ -579,7 +579,14 @@
               <textarea matInput formControlName="specifications" rows="6"></textarea>
             </mat-form-field>
           </div>
+        </mat-tab>
 
+        <!-- ══ TAB 6 — PRESENTACIONES ═════════════════════════════════ -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>view_module</mat-icon>
+            Presentaciones
+          </ng-template>
           @if (showPresentationsTab()) {
             @defer {
               <app-presentations-tab
@@ -589,18 +596,33 @@
             } @placeholder (minimum 200ms) {
               <div class="tab-content"></div>
             }
+          } @else {
+            <div class="tab-content">
+              <p class="sub-table-empty">Guardá el producto para gestionar sus presentaciones.</p>
+            </div>
           }
+        </mat-tab>
 
+        <!-- ══ TAB 7 — FÓRMULAS ═══════════════════════════════════════ -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon>science</mat-icon>
+            Fórmulas
+          </ng-template>
           @if (showFormulaTab()) {
             @defer {
               <app-formula-tab [productId]="loadedId()!" [formArray]="formulasFormArray" />
             } @placeholder (minimum 200ms) {
               <div class="tab-content"></div>
             }
+          } @else {
+            <div class="tab-content">
+              <p class="sub-table-empty">Este producto no está definido como Fórmula/Combo.</p>
+            </div>
           }
         </mat-tab>
 
-        <!-- ══ TAB 6 — IMÁGENES ═══════════════════════════════════════ -->
+        <!-- ══ TAB 8 — IMÁGENES ═══════════════════════════════════════ -->
         <mat-tab>
           <ng-template mat-tab-label>
             <mat-icon>image</mat-icon>
@@ -689,7 +711,7 @@
           </div>
         </mat-tab>
 
-        <!-- ══ TAB 7 — PROMOCIONES ════════════════════════════════════ -->
+        <!-- ══ TAB 9 — PROMOCIONES ════════════════════════════════════ -->
         <mat-tab>
           <ng-template mat-tab-label>
             <mat-icon>star_border</mat-icon>

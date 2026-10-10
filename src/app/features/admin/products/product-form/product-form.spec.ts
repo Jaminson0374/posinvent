@@ -39,6 +39,8 @@ describe('ProductFormComponent — tab navigation', () => {
       'Contabilización',
       'Proveedores',
       'Especificaciones',
+      'Presentaciones',
+      'Fórmulas',
       'Imágenes',
       'Promociones',
     ];
@@ -46,6 +48,35 @@ describe('ProductFormComponent — tab navigation', () => {
     requestedLabels.forEach((label, index) => {
       expect(labels[index]).toContain(label);
     });
+  });
+
+  it('should keep Presentaciones and Fórmulas tabs with a loaded product in view/edit mode and hide their ABM in new mode', () => {
+    // Let ngOnInit run its route subscription first so it does not reset state below.
+    fixture.detectChanges();
+
+    // View mode with a loaded product
+    component.mode.set('view');
+    component.loadedId.set('product-1');
+    fixture.detectChanges();
+
+    const labels = fixture.debugElement
+      .queryAll(By.css('.mat-mdc-tab'))
+      .map((tab) => (tab.nativeElement as HTMLElement).textContent?.trim());
+    expect(labels.some((label) => label?.includes('Presentaciones'))).toBe(true);
+    expect(labels.some((label) => label?.includes('Fórmulas'))).toBe(true);
+    expect(component.showPresentationsTab()).toBe(true);
+
+    // Edit mode keeps the ABM available
+    component.mode.set('edit');
+    fixture.detectChanges();
+    expect(component.showPresentationsTab()).toBe(true);
+
+    // New mode (no product loaded) hides their ABM
+    component.mode.set('new');
+    component.loadedId.set(null);
+    fixture.detectChanges();
+    expect(component.showPresentationsTab()).toBe(false);
+    expect(component.showFormulaTab()).toBe(false);
   });
 
   // ── RED 4: product-general wraps the form content ──────────────────
