@@ -4,11 +4,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import type { PageEvent } from '@angular/material/paginator';
 
 import { AdjustmentListComponent } from './adjustment-list';
+import { AdjustmentDetailDialogComponent } from './adjustment-detail-dialog';
 import { AdjustmentService } from '../../../core/services/adjustment.service';
 import type { StockAdjustment } from '../../../core/models/adjustment.model';
 import type { PageResponse } from '../../../core/models/page.model';
@@ -87,7 +89,21 @@ describe('AdjustmentListComponent', () => {
       'quantityBefore',
       'quantityAfter',
       'reason',
+      'actions',
     ]);
+  });
+
+  it('abre el diálogo de detalle pasando la fila como data', () => {
+    const openSpy = vi.spyOn(MatDialog.prototype, 'open').mockReturnValue({
+      afterClosed: () => of(undefined),
+    } as unknown as MatDialogRef<unknown>);
+
+    component.openDetail(adjustment);
+
+    expect(openSpy).toHaveBeenCalledWith(
+      AdjustmentDetailDialogComponent,
+      expect.objectContaining({ data: adjustment, width: '520px' }),
+    );
   });
 
   it('recarga al cambiar de página y conserva el tamaño', () => {

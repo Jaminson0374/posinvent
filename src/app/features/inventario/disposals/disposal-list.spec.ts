@@ -6,11 +6,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import type { PageEvent } from '@angular/material/paginator';
 
 import { DisposalListComponent } from './disposal-list';
+import { DisposalDetailDialogComponent } from './disposal-detail-dialog';
 import { DisposalService } from '../../../core/services/disposal.service';
 import type { DisposalResponse } from '../../../core/models/disposal.model';
 import type { PageResponse } from '../../../core/models/page.model';
@@ -89,7 +91,21 @@ describe('DisposalListComponent', () => {
       'quantity',
       'unitCost',
       'reason',
+      'actions',
     ]);
+  });
+
+  it('abre el diálogo de detalle pasando la fila como data', () => {
+    const openSpy = vi.spyOn(MatDialog.prototype, 'open').mockReturnValue({
+      afterClosed: () => of(undefined),
+    } as unknown as MatDialogRef<unknown>);
+
+    component.openDetail(disposal);
+
+    expect(openSpy).toHaveBeenCalledWith(
+      DisposalDetailDialogComponent,
+      expect.objectContaining({ data: disposal, width: '520px' }),
+    );
   });
 
   it('recarga al cambiar de página', () => {

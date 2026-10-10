@@ -55,6 +55,19 @@
           ><mat-header-cell *matHeaderCellDef>Motivo</mat-header-cell
           ><mat-cell *matCellDef="let r">{{ r.reason | slice: 0 : 50 }}</mat-cell></ng-container
         >
+        <ng-container matColumnDef="actions">
+          <mat-header-cell *matHeaderCellDef>Acciones</mat-header-cell>
+          <mat-cell *matCellDef="let r">
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Ver detalle del decomiso"
+              (click)="$event.stopPropagation(); openDetail(r)"
+            >
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
         <mat-header-row *matHeaderRowDef="cols" /><mat-row *matRowDef="let r; columns: cols" />
       </mat-table>
       <mat-paginator
