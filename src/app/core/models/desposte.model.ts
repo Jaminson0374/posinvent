@@ -47,6 +47,47 @@ export interface ManualDesposteCutResult extends ManualDesposteCutInput {
   unitCost: number;
 }
 
+/** A single cut produced by a persisted desposte (mirrors `DesposteCut` JSON). */
+export interface DesposteCut {
+  id: string;
+  productId: string;
+  warehouseId: string;
+  childBatchId: string | null;
+  weight: number;
+  suggestedSalePrice: number;
+  commercialValue: number;
+  allocatedCost: number;
+  unitCost: number;
+  expirationDate: string | null;
+}
+
+/**
+ * A persisted desposte (mirrors the `Desposte` JSON returned by the API).
+ * Mass-balance semantics: `totalCutsWeight` is usable yield, `wasteWeight` is
+ * operational waste, `shrinkWeight` is technical shrink, `deviation` is the
+ * mass delta and `yieldPercentage` is the cutting yield.
+ */
+export interface Desposte {
+  id: string;
+  sourceBatchId: string;
+  productId: string;
+  warehouseId: string;
+  inputWeight: number;
+  totalCutsWeight: number;
+  wasteWeight: number;
+  shrinkWeight: number;
+  deviation: number;
+  tolerance: number;
+  withinTolerance: boolean;
+  yieldPercentage: number;
+  totalCommercialValue: number;
+  totalAllocatedCost: number;
+  notes: string | null;
+  createdBy: string;
+  createdAt: string;
+  cuts: DesposteCut[];
+}
+
 export interface StockUpsertDraft {
   productId: string;
   batchId: string;

@@ -601,10 +601,22 @@ export const routes: Routes = [
           },
           {
             path: 'desposte',
-            loadComponent: () =>
-              import('./features/inventario/desposte/desposte-manual/desposte-manual').then(
-                (m) => m.DesposteManualComponent,
-              ),
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./features/inventario/desposte/desposte-manual/desposte-manual').then(
+                    (m) => m.DesposteManualComponent,
+                  ),
+              },
+              {
+                path: 'mvm',
+                loadComponent: () =>
+                  import('./features/inventario/desposte/desposte-mvm/desposte-mvm').then(
+                    (m) => m.DesposteMvmComponent,
+                  ),
+              },
+            ],
           },
           {
             path: 'precios',
