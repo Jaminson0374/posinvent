@@ -126,6 +126,13 @@
     <ng-container matColumnDef="actions">
       <mat-header-cell *matHeaderCellDef></mat-header-cell>
       <mat-cell *matCellDef="let row">
+        <button
+          mat-icon-button
+          [routerLink]="['/inventario/lotes', row.id]"
+          aria-label="Ver detalle del lote"
+        >
+          <mat-icon>visibility</mat-icon>
+        </button>
         @if (row.status !== 'CLOSED') {
           <button
             mat-icon-button

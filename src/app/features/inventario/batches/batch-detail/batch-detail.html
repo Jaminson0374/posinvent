@@ -1,0 +1,180 @@
+<div class="bd-page">
+  <div class="bd-header">
+    <a mat-button routerLink="/inventario/lotes" class="bd-back-btn">
+      <mat-icon>arrow_back</mat-icon> Volver
+    </a>
+
+    @if (batch(); as b) {
+      @if (b.status !== 'CLOSED') {
+        <button mat-flat-button color="warn" (click)="closeBatch()">
+          <mat-icon>lock</mat-icon> Cerrar lote
+        </button>
+      }
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="spinner-container">
+      <mat-spinner diameter="40" />
+    </div>
+  }
+
+  @if (error()) {
+    <div class="error-msg">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  @if (batch(); as b) {
+    <div class="bd-card">
+      <h2 class="bd-title">Lote {{ b.id }}</h2>
+
+      <div class="bd-grid">
+        <div class="bd-field">
+          <span class="bd-label">Producto</span>
+          <span class="bd-value">{{ b.productName || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Proveedor</span>
+          <span class="bd-value">{{ b.supplierName || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Bodega</span>
+          <span class="bd-value">{{ b.warehouseName || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Fecha de ingreso</span>
+          <span class="bd-value">{{ b.entryDate | date: 'dd/MM/yyyy' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Fecha de vencimiento</span>
+          <span class="bd-value">
+            {{ b.expirationDate ? (b.expirationDate | date: 'dd/MM/yyyy') : '—' }}
+          </span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Peso inicial (kg)</span>
+          <span class="bd-value">{{ b.initialWeight | number: '1.2-2' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Costo de compra</span>
+          <span class="bd-value">{{ b.purchaseCost | number: '1.0-0' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Costo total</span>
+          <span class="bd-value">{{ totalCost() | number: '1.0-0' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Estado</span>
+          <span class="bd-value">
+            <mat-chip [class]="'chip-status-' + b.status.toLowerCase()">
+              {{ getStatusLabel(b.status) }}
+            </mat-chip>
+          </span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Tipo de lote</span>
+          <span class="bd-value">{{ getBatchTypeLabel(b.batchType) }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Unidad de medida</span>
+          <span class="bd-value">{{ b.unitOfMeasureName || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Remisión</span>
+          <span class="bd-value">{{ b.sourceReceiptId || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Orden de compra</span>
+          <span class="bd-value">{{ b.ocId || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Lote padre</span>
+          <span class="bd-value">{{ b.parentBatchId || '—' }}</span>
+        </div>
+
+        <div class="bd-field bd-field-full">
+          <span class="bd-label">Notas</span>
+          <span class="bd-value">{{ b.notes || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Creado por</span>
+          <span class="bd-value">{{ b.createdBy || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Actualizado por</span>
+          <span class="bd-value">{{ b.updatedBy || '—' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Creado</span>
+          <span class="bd-value">{{ b.createdAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+
+        <div class="bd-field">
+          <span class="bd-label">Actualizado</span>
+          <span class="bd-value">{{ b.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+      </div>
+    </div>
+
+    @if (b.batchType === 'PARENT') {
+      <div class="bd-children">
+        <h3 class="bd-subtitle">Lotes hijos</h3>
+
+        @if (children().length > 0) {
+          <mat-table [dataSource]="children()" class="bd-table">
+            <ng-container matColumnDef="entryDate">
+              <mat-header-cell *matHeaderCellDef>Fecha</mat-header-cell>
+              <mat-cell *matCellDef="let child">
+                {{ child.entryDate | date: 'dd/MM/yyyy' }}
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="productName">
+              <mat-header-cell *matHeaderCellDef>Producto</mat-header-cell>
+              <mat-cell *matCellDef="let child">{{ child.productName || '—' }}</mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="initialWeight">
+              <mat-header-cell *matHeaderCellDef class="cell-num">Peso (kg)</mat-header-cell>
+              <mat-cell *matCellDef="let child" class="cell-num">
+                {{ child.initialWeight | number: '1.2-2' }}
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
+              <mat-cell *matCellDef="let child">
+                <mat-chip [class]="'chip-status-' + child.status.toLowerCase()">
+                  {{ getStatusLabel(child.status) }}
+                </mat-chip>
+              </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="childColumns" />
+            <mat-row *matRowDef="let row; columns: childColumns" />
+          </mat-table>
+        } @else {
+          <p class="bd-empty">Sin lotes hijos registrados.</p>
+        }
+      </div>
+    }
+  }
+</div>

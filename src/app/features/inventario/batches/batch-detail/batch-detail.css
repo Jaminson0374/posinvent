@@ -1,0 +1,117 @@
+.bd-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.bd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.bd-back-btn {
+  color: #475569;
+}
+
+.bd-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.bd-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1.25rem;
+}
+
+.bd-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.5rem;
+}
+
+.bd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bd-field-full {
+  grid-column: 1 / -1;
+}
+
+.bd-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bd-value {
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.cell-num {
+  text-align: right !important;
+}
+
+.bd-children {
+  margin-top: 1.5rem;
+}
+
+.bd-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 0.75rem;
+}
+
+.bd-table {
+  width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.bd-empty {
+  color: #94a3b8;
+  padding: 1rem 0;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.error-msg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  text-align: center;
+  padding: 48px;
+}
+
+/* --- Status chips --- */
+.chip-status-open {
+  --mdc-chip-label-text-color: #15803d;
+  background: #dcfce7;
+}
+.chip-status-processing {
+  --mdc-chip-label-text-color: #92400e;
+  background: #fef3c7;
+}
+.chip-status-closed {
+  --mdc-chip-label-text-color: #475569;
+  background: #f1f5f9;
+}
