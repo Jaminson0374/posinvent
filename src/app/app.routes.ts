@@ -468,13 +468,6 @@ export const routes: Routes = [
             ],
           },
           {
-            path: 'produccion',
-            loadComponent: () =>
-              import('./features/inventario/produccion/production-list').then(
-                (m) => m.ProductionListComponent,
-              ),
-          },
-          {
             path: 'produccion/nuevo',
             loadComponent: () =>
               import('./features/inventario/produccion/production-batch').then(
