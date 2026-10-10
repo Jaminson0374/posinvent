@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormArray, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -34,8 +34,8 @@ import Swal from 'sweetalert2';
   styleUrl: './formula-tab.css',
 })
 export class FormulaTabComponent {
-  @Input({ required: true }) productId!: string;
-  @Input() formArray: FormArray<FormGroup> = null!;
+  readonly productId = input.required<string>();
+  readonly formArray = input<FormArray<FormGroup>>(null!);
 
   private readonly formulaService = inject(FormulaService);
   readonly productService = inject(ProductService);
@@ -62,14 +62,14 @@ export class FormulaTabComponent {
   }
 
   ngOnInit(): void {
-    if (this.productId) {
+    if (this.productId()) {
       this.loadFormulas();
     }
   }
 
   loadFormulas(): void {
     this.loading.set(true);
-    this.formulaService.list(this.productId).subscribe({
+    this.formulaService.list(this.productId()).subscribe({
       next: (data) => {
         this.populateFormArray(data);
         this.loading.set(false);
@@ -80,9 +80,9 @@ export class FormulaTabComponent {
   }
 
   private populateFormArray(formulas: ProductFormula[]): void {
-    this.formArray.clear({ emitEvent: false });
+    this.formArray().clear({ emitEvent: false });
     for (const f of formulas) {
-      this.formArray.push(this.createFormulaGroup(f), { emitEvent: false });
+      this.formArray().push(this.createFormulaGroup(f), { emitEvent: false });
     }
   }
 
@@ -118,7 +118,7 @@ export class FormulaTabComponent {
     this.componentSearchLoading.set(true);
     this.productService.search(q).subscribe({
       next: (page) => {
-        this.componentResults.set(page.content.filter((p) => p.id !== this.productId));
+        this.componentResults.set(page.content.filter((p) => p.id !== this.productId()));
         this.componentSearchLoading.set(false);
       },
       error: () => this.componentSearchLoading.set(false),
@@ -136,10 +136,10 @@ export class FormulaTabComponent {
       componentProductId: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(0.0001)]],
       unitOfMeasureId: [null],
-      sequenceNumber: [this.formArray.length],
+      sequenceNumber: [this.formArray().length],
       notes: [''],
     });
-    this.formArray.push(newGroup);
+    this.formArray().push(newGroup);
   }
 
   startEdit(index: number): void {
@@ -150,7 +150,7 @@ export class FormulaTabComponent {
   cancelEdit(): void {
     if (this.adding()) {
       // Remove the temporary add row
-      this.formArray.removeAt(this.formArray.length - 1, { emitEvent: false });
+      this.formArray().removeAt(this.formArray().length - 1, { emitEvent: false });
     }
     this.adding.set(false);
     this.editingIndex.set(null);
@@ -158,20 +158,20 @@ export class FormulaTabComponent {
 
   selectComponent(product: Product): void {
     // Set componentProductId on the add FormGroup (last in array)
-    const addGroup = this.formArray.at(this.formArray.length - 1);
+    const addGroup = this.formArray().at(this.formArray().length - 1);
     addGroup.get('componentProductId')?.setValue(product.id);
     this.componentSearch.set(product.name);
     this.componentResults.set([]);
   }
 
   saveNew(): void {
-    const addGroup = this.formArray.at(this.formArray.length - 1);
+    const addGroup = this.formArray().at(this.formArray().length - 1);
     const componentProductId = addGroup.get('componentProductId')?.value as string;
     const quantity = addGroup.get('quantity')?.value as number;
     if (!componentProductId || quantity <= 0) return;
 
     this.formulaService
-      .add(this.productId, {
+      .add(this.productId(), {
         componentProductId,
         quantity,
         unitOfMeasureId: addGroup.get('unitOfMeasureId')?.value ?? null,
@@ -194,7 +194,7 @@ export class FormulaTabComponent {
 
   saveEdit(group: FormGroup): void {
     this.formulaService
-      .update(this.productId, group.get('id')?.value as string, {
+      .update(this.productId(), group.get('id')?.value as string, {
         quantity: group.get('quantity')?.value,
         unitOfMeasureId: group.get('unitOfMeasureId')?.value ?? null,
         sequenceNumber: group.get('sequenceNumber')?.value ?? 0,
@@ -215,7 +215,7 @@ export class FormulaTabComponent {
   }
 
   removeFormula(index: number): void {
-    const group = this.formArray.at(index);
+    const group = this.formArray().at(index);
     const formulaId = group.get('id')?.value as string;
     Swal.fire({
       icon: 'warning',
@@ -227,7 +227,7 @@ export class FormulaTabComponent {
       confirmButtonColor: '#ef4444',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.formulaService.remove(this.productId, formulaId).subscribe({
+        this.formulaService.remove(this.productId(), formulaId).subscribe({
           next: () => this.loadFormulas(),
           error: () => Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar.' }),
         });
@@ -241,7 +241,7 @@ export class FormulaTabComponent {
 
   navigateToProduction(): void {
     this.router.navigate(['/inventario/produccion/nuevo'], {
-      queryParams: { formulaId: this.productId },
+      queryParams: { formulaId: this.productId() },
     });
   }
 }

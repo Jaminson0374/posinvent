@@ -31,15 +31,16 @@ describe('ProductSummaryComponent', () => {
     tax?: string | null;
     stock?: number | null;
   }): void => {
-    if (values.code !== undefined) component.code = values.code;
-    if (values.name !== undefined) component.name = values.name;
-    if (values.category !== undefined) component.category = values.category;
-    if (values.uom !== undefined) component.uom = values.uom;
-    if (values.cost !== undefined) component.cost = values.cost;
-    if (values.margin !== undefined) component.margin = values.margin;
-    if (values.salePrice !== undefined) component.salePrice = values.salePrice;
-    if (values.tax !== undefined) component.tax = values.tax;
-    if (values.stock !== undefined) component.stock = values.stock;
+    if (values.code !== undefined) fixture.componentRef.setInput('code', values.code);
+    if (values.name !== undefined) fixture.componentRef.setInput('name', values.name);
+    if (values.category !== undefined) fixture.componentRef.setInput('category', values.category);
+    if (values.uom !== undefined) fixture.componentRef.setInput('uom', values.uom);
+    if (values.cost !== undefined) fixture.componentRef.setInput('cost', values.cost);
+    if (values.margin !== undefined) fixture.componentRef.setInput('margin', values.margin);
+    if (values.salePrice !== undefined)
+      fixture.componentRef.setInput('salePrice', values.salePrice);
+    if (values.tax !== undefined) fixture.componentRef.setInput('tax', values.tax);
+    if (values.stock !== undefined) fixture.componentRef.setInput('stock', values.stock);
   };
 
   // ── RED 1: renders all fields when provided ──────────────────────────

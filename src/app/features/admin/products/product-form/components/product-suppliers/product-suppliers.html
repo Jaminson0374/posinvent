@@ -11,7 +11,7 @@
   </div>
   <mat-divider />
   <div class="ps-card__body">
-    @if (isEditing) {
+    @if (isEditing()) {
       <div class="ps-supplier-header">
         <button class="ps-add-supplier-btn" mat-stroked-button (click)="addSupplier.emit()">
           <mat-icon>add</mat-icon> Agregar proveedor
@@ -19,12 +19,12 @@
       </div>
     }
 
-    @for (sRow of suppliersArray.controls; track $index; let i = $index) {
+    @for (sRow of suppliersArray().controls; track $index; let i = $index) {
       <div class="ps-supplier-row" [formGroup]="$any(sRow)">
         <mat-form-field appearance="outline">
           <mat-label>Proveedor</mat-label>
           <mat-select formControlName="supplierId">
-            @for (s of supplierList; track s.id) {
+            @for (s of supplierList(); track s.id) {
               <mat-option [value]="s.id">{{ supplierLabel(s) }}</mat-option>
             }
           </mat-select>
@@ -39,7 +39,7 @@
           <input matInput type="number" formControlName="unitCost" min="0" />
         </mat-form-field>
         <mat-checkbox formControlName="isMain">Principal</mat-checkbox>
-        @if (isEditing) {
+        @if (isEditing()) {
           <button
             mat-icon-button
             color="warn"
@@ -52,7 +52,7 @@
       </div>
     }
 
-    @if (suppliersArray.length === 0) {
+    @if (suppliersArray().length === 0) {
       <p class="ps-supplier-empty">Sin proveedores asignados</p>
     }
   </div>

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -24,11 +24,11 @@ import { Warehouse } from '../../core/models/warehouse.model';
   ],
   template: `
     <mat-form-field appearance="outline" class="w-picker">
-      <mat-label>{{ label }}</mat-label>
+      <mat-label>{{ label() }}</mat-label>
       <input
         matInput
         [formControl]="searchControl"
-        [placeholder]="placeholder"
+        [placeholder]="placeholder()"
         [matAutocomplete]="auto"
       />
       <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSelected($event)">
@@ -75,11 +75,11 @@ import { Warehouse } from '../../core/models/warehouse.model';
 export class WarehousePickerComponent {
   private readonly service = inject(WarehouseService);
 
-  @Input() label = 'Bodega';
-  @Input() placeholder = 'Buscar bodega...';
+  readonly label = input('Bodega');
+  readonly placeholder = input('Buscar bodega...');
 
-  @Output() selected = new EventEmitter<string>();
-  @Output() cleared = new EventEmitter<void>();
+  readonly selected = output<string>();
+  readonly cleared = output<void>();
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly options = signal<Warehouse[]>([]);

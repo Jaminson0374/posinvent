@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,11 +26,11 @@ import { Product } from '../../core/models/product.model';
   ],
   template: `
     <mat-form-field appearance="outline" class="p-search">
-      <mat-label>{{ label }}</mat-label>
+      <mat-label>{{ label() }}</mat-label>
       <input
         matInput
         [formControl]="searchControl"
-        [placeholder]="placeholder"
+        [placeholder]="placeholder()"
         [matAutocomplete]="auto"
       />
       <mat-autocomplete #auto="matAutocomplete" (optionSelected)="onSelected($event)">
@@ -87,11 +87,11 @@ import { Product } from '../../core/models/product.model';
 export class ProductSearchComponent {
   private readonly service = inject(ProductService);
 
-  @Input() label = 'Producto';
-  @Input() placeholder = 'Buscar por código, nombre o código de barras...';
+  readonly label = input('Producto');
+  readonly placeholder = input('Buscar por código, nombre o código de barras...');
 
-  @Output() selected = new EventEmitter<{ id: string; name: string; code: string }>();
-  @Output() cleared = new EventEmitter<void>();
+  readonly selected = output<{ id: string; name: string; code: string }>();
+  readonly cleared = output<void>();
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly options = signal<Product[]>([]);

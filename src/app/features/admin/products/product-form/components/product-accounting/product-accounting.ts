@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -33,9 +33,9 @@ export interface AccountingTemplateOption {
   styleUrl: './product-accounting.css',
 })
 export class ProductAccountingComponent {
-  @Input({ required: true }) form!: FormGroup;
-  @Input() incomeAccounts: PucAccountOption[] = [];
-  @Input() inventoryAccounts: PucAccountOption[] = [];
-  @Input() costAccounts: PucAccountOption[] = [];
-  @Input() templates: AccountingTemplateOption[] = [];
+  readonly form = input.required<FormGroup>();
+  readonly incomeAccounts = input<PucAccountOption[]>([]);
+  readonly inventoryAccounts = input<PucAccountOption[]>([]);
+  readonly costAccounts = input<PucAccountOption[]>([]);
+  readonly templates = input<AccountingTemplateOption[]>([]);
 }

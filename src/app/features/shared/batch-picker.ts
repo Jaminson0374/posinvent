@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { SlicePipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -28,7 +28,7 @@ interface BatchOption {
   ],
   template: `
     <mat-form-field appearance="outline" class="b-picker">
-      <mat-label>{{ label }}</mat-label>
+      <mat-label>{{ label() }}</mat-label>
       <mat-select [(value)]="selectedId" (selectionChange)="onChange()">
         <mat-option [value]="null">— Sin lote —</mat-option>
         @if (loading()) {
@@ -62,10 +62,10 @@ interface BatchOption {
 export class BatchPickerComponent {
   private readonly http = inject(HttpClient);
 
-  @Input() label = 'Lote';
-  @Input() warehouseId: string | null = null;
+  readonly label = input('Lote');
+  readonly warehouseId = input<string | null>(null);
 
-  @Output() selected = new EventEmitter<string | null>();
+  readonly selected = output<string | null>();
 
   readonly options = signal<BatchOption[]>([]);
   readonly loading = signal(false);

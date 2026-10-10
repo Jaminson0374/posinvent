@@ -18,10 +18,7 @@ import type {
   ProduceResponse,
 } from '../../../core/models/product-formula.model';
 
-vi.mock('sweetalert2', () => ({
-  default: { fire: vi.fn() },
-  __esModule: true,
-}));
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: true } as never);
 
 function product(overrides: Partial<Product> = {}): Product {
   return {
@@ -95,7 +92,7 @@ describe('ProductionBatchComponent', () => {
     formulaService.list.mockReturnValue(of([formula()]));
     productionService.produce.mockReset();
     productionService.produce.mockReturnValue(of(produceResponse));
-    (Swal.fire as ReturnType<typeof vi.fn>).mockReset();
+    (Swal.fire as ReturnType<typeof vi.fn>).mockClear();
 
     await TestBed.configureTestingModule({
       imports: [ProductionBatchComponent, NoopAnimationsModule],

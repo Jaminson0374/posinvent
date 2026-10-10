@@ -6,16 +6,14 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
+import Swal from 'sweetalert2';
 
 import { AdjustmentFormComponent } from './adjustment-form';
 import { AdjustmentService } from '../../../core/services/adjustment.service';
 import { ProductService } from '../../../core/services/product.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 
-vi.mock('sweetalert2', () => ({
-  default: { fire: vi.fn().mockResolvedValue({ isConfirmed: true }) },
-  __esModule: true,
-}));
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: true } as never);
 
 describe('AdjustmentFormComponent', () => {
   let fixture: ComponentFixture<AdjustmentFormComponent>;

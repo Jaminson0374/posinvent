@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -9,33 +9,34 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './product-summary.css',
 })
 export class ProductSummaryComponent {
-  @Input() code: string | null = null;
-  @Input() name: string | null = null;
-  @Input() category: string | null = null;
-  @Input() uom: string | null = null;
-  @Input() cost: number | null = null;
-  @Input() margin: number | null = null;
-  @Input() salePrice: number | null = null;
-  @Input() tax: string | null = null;
-  @Input() stock: number | null = null;
+  readonly code = input<string | null>(null);
+  readonly name = input<string | null>(null);
+  readonly category = input<string | null>(null);
+  readonly uom = input<string | null>(null);
+  readonly cost = input<number | null>(null);
+  readonly margin = input<number | null>(null);
+  readonly salePrice = input<number | null>(null);
+  readonly tax = input<string | null>(null);
+  readonly stock = input<number | null>(null);
 
-  /** The human-readable labels mapped to field values for incomplete-check. */
-  private static readonly REQUIRED_FIELDS: { key: keyof ProductSummaryComponent; label: string }[] =
-    [
-      { key: 'code', label: 'Código' },
-      { key: 'name', label: 'Nombre' },
-      { key: 'category', label: 'Categoría' },
-      { key: 'uom', label: 'U. Medida' },
-    ];
+  /** The human-readable labels mapped to the required field readers for incomplete-check. */
+  private readonly requiredFields: { read: () => string | null; label: string }[] = [
+    { read: () => this.code(), label: 'Código' },
+    { read: () => this.name(), label: 'Nombre' },
+    { read: () => this.category(), label: 'Categoría' },
+    { read: () => this.uom(), label: 'U. Medida' },
+  ];
 
   /** List of field labels where the value is null/empty. */
   get incompleteFields(): string[] {
-    return ProductSummaryComponent.REQUIRED_FIELDS.filter((field) => {
-      const value = this[field.key];
-      if (value === null || value === undefined) return true;
-      if (typeof value === 'string' && value.trim() === '') return true;
-      return false;
-    }).map((field) => field.label);
+    return this.requiredFields
+      .filter((field) => {
+        const value = field.read();
+        if (value === null || value === undefined) return true;
+        if (typeof value === 'string' && value.trim() === '') return true;
+        return false;
+      })
+      .map((field) => field.label);
   }
 
   /** Number of incomplete required fields. */

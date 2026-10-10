@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormArray, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
@@ -40,8 +40,8 @@ import Swal from 'sweetalert2';
   styleUrl: './presentations-tab.css',
 })
 export class PresentationsTabComponent {
-  @Input({ required: true }) productId!: string;
-  @Input() formArray: FormArray<FormGroup> = null!;
+  readonly productId = input.required<string>();
+  readonly formArray = input<FormArray<FormGroup>>(null!);
 
   private readonly presentationService = inject(PresentationService);
   readonly uomService = inject(UnitOfMeasureService);
@@ -60,14 +60,14 @@ export class PresentationsTabComponent {
   }
 
   ngOnInit(): void {
-    if (this.productId) {
+    if (this.productId()) {
       this.loadPresentations();
     }
   }
 
   loadPresentations(): void {
     this.loading.set(true);
-    this.presentationService.list(this.productId).subscribe({
+    this.presentationService.list(this.productId()).subscribe({
       next: (data) => {
         this.populateFormArray(data);
         this.loading.set(false);
@@ -79,9 +79,9 @@ export class PresentationsTabComponent {
   }
 
   private populateFormArray(presentations: ProductPresentation[]): void {
-    this.formArray.clear({ emitEvent: false });
+    this.formArray().clear({ emitEvent: false });
     for (const p of presentations) {
-      this.formArray.push(this.createPresentationGroup(p), { emitEvent: false });
+      this.formArray().push(this.createPresentationGroup(p), { emitEvent: false });
     }
   }
 
@@ -109,7 +109,7 @@ export class PresentationsTabComponent {
       salePrice: [null as number | null],
       isDefault: [false],
     });
-    this.formArray.push(newGroup);
+    this.formArray().push(newGroup);
   }
 
   startEdit(index: number): void {
@@ -119,14 +119,14 @@ export class PresentationsTabComponent {
 
   cancelEdit(): void {
     if (this.adding()) {
-      this.formArray.removeAt(this.formArray.length - 1, { emitEvent: false });
+      this.formArray().removeAt(this.formArray().length - 1, { emitEvent: false });
     }
     this.adding.set(false);
     this.editingIndex.set(null);
   }
 
   saveNew(): void {
-    const addGroup = this.formArray.at(this.formArray.length - 1);
+    const addGroup = this.formArray().at(this.formArray().length - 1);
     if (addGroup.invalid) {
       addGroup.markAllAsTouched();
       return;
@@ -141,7 +141,7 @@ export class PresentationsTabComponent {
       isDefault: addGroup.get('isDefault')?.value,
     };
 
-    this.presentationService.create(this.productId, req).subscribe({
+    this.presentationService.create(this.productId(), req).subscribe({
       next: () => {
         this.adding.set(false);
         this.loadPresentations();
@@ -178,7 +178,7 @@ export class PresentationsTabComponent {
     };
 
     this.presentationService
-      .update(this.productId, group.get('id')?.value as string, req)
+      .update(this.productId(), group.get('id')?.value as string, req)
       .subscribe({
         next: () => {
           this.editingIndex.set(null);
@@ -201,7 +201,7 @@ export class PresentationsTabComponent {
   }
 
   deletePresentation(index: number): void {
-    const group = this.formArray.at(index);
+    const group = this.formArray().at(index);
     const presentationId = group.get('id')?.value as string;
     const code = group.get('code')?.value;
     const name = group.get('name')?.value;
@@ -215,7 +215,7 @@ export class PresentationsTabComponent {
       confirmButtonColor: '#ef4444',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.presentationService.delete(this.productId, presentationId).subscribe({
+        this.presentationService.delete(this.productId(), presentationId).subscribe({
           next: () => {
             this.loadPresentations();
             Swal.fire({
@@ -234,7 +234,7 @@ export class PresentationsTabComponent {
   }
 
   setAsDefault(index: number): void {
-    const group = this.formArray.at(index);
+    const group = this.formArray().at(index);
     const req: ProductPresentationRequest = {
       code: group.get('code')?.value,
       name: group.get('name')?.value,
@@ -244,7 +244,7 @@ export class PresentationsTabComponent {
       isDefault: true,
     };
     this.presentationService
-      .update(this.productId, group.get('id')?.value as string, req)
+      .update(this.productId(), group.get('id')?.value as string, req)
       .subscribe({
         next: () => {
           this.loadPresentations();

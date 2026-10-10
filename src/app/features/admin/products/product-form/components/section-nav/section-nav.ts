@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
 
@@ -16,9 +16,9 @@ export interface SectionNavItem {
   styleUrl: './section-nav.css',
 })
 export class SectionNavComponent {
-  @Input({ required: true }) sections!: SectionNavItem[];
-  @Input({ required: true }) activeSection!: string;
-  @Output() sectionChange = new EventEmitter<string>();
+  readonly sections = input.required<SectionNavItem[]>();
+  readonly activeSection = input.required<string>();
+  readonly sectionChange = output<string>();
 
   onItemClick(sectionId: string): void {
     this.sectionChange.emit(sectionId);

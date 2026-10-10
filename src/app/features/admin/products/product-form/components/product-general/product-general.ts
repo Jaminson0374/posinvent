@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -37,40 +37,40 @@ export interface ProductGeneralDisplayControls {
   styleUrl: './product-general.css',
 })
 export class ProductGeneralComponent {
-  @Input({ required: true }) form!: FormGroup;
-  @Input() displayControls?: ProductGeneralDisplayControls;
+  readonly form = input.required<FormGroup>();
+  readonly displayControls = input<ProductGeneralDisplayControls>();
 
   // Getters that always return a valid FormControl for template binding
   get typeDc(): FormControl<string | null> {
-    return this.displayControls?.typeDisplay ?? (this._typeFallback as FormControl<string | null>);
+    return this.displayControls()?.typeDisplay ?? (this._typeFallback as FormControl<string | null>);
   }
   get stateDc(): FormControl<string | null> {
     return (
-      this.displayControls?.stateDisplay ?? (this._stateFallback as FormControl<string | null>)
+      this.displayControls()?.stateDisplay ?? (this._stateFallback as FormControl<string | null>)
     );
   }
   get brandDc(): FormControl<string | null> {
     return (
-      this.displayControls?.brandDisplay ?? (this._brandFallback as FormControl<string | null>)
+      this.displayControls()?.brandDisplay ?? (this._brandFallback as FormControl<string | null>)
     );
   }
   get modelDc(): FormControl<string | null> {
     return (
-      this.displayControls?.modelDisplay ?? (this._modelFallback as FormControl<string | null>)
+      this.displayControls()?.modelDisplay ?? (this._modelFallback as FormControl<string | null>)
     );
   }
   get catDc(): FormControl<string | null> {
     return (
-      this.displayControls?.categoryDisplay ?? (this._catFallback as FormControl<string | null>)
+      this.displayControls()?.categoryDisplay ?? (this._catFallback as FormControl<string | null>)
     );
   }
   get groupDc(): FormControl<string | null> {
     return (
-      this.displayControls?.groupDisplay ?? (this._groupFallback as FormControl<string | null>)
+      this.displayControls()?.groupDisplay ?? (this._groupFallback as FormControl<string | null>)
     );
   }
   get uomDc(): FormControl<string | null> {
-    return this.displayControls?.uomDisplay ?? (this._uomFallback as FormControl<string | null>);
+    return this.displayControls()?.uomDisplay ?? (this._uomFallback as FormControl<string | null>);
   }
 
   private readonly _typeFallback = new FormControl('');

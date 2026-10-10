@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { FormArray, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -37,11 +37,11 @@ export interface SupplierOption {
   styleUrl: './product-suppliers.css',
 })
 export class ProductSuppliersComponent {
-  @Input({ required: true }) suppliersArray!: FormArray;
-  @Input() supplierList: SupplierOption[] = [];
-  @Input() isEditing = false;
-  @Output() addSupplier = new EventEmitter<void>();
-  @Output() removeSupplier = new EventEmitter<number>();
+  readonly suppliersArray = input.required<FormArray>();
+  readonly supplierList = input<SupplierOption[]>([]);
+  readonly isEditing = input(false);
+  readonly addSupplier = output<void>();
+  readonly removeSupplier = output<number>();
 
   supplierLabel(s: SupplierOption): string {
     const fullName = [s.name, s.lastName].filter(Boolean).join(' ');

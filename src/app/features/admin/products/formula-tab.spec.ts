@@ -8,18 +8,15 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
+import Swal from 'sweetalert2';
 
 import { FormulaTabComponent } from './formula-tab';
 import { FormulaService } from '../../../core/services/formula.service';
 import { ProductService } from '../../../core/services/product.service';
 import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.service';
 
-// Mock SweetAlert2
-vi.mock('sweetalert2', () => ({
-  default: {
-    fire: vi.fn().mockResolvedValue({ isConfirmed: false }),
-  },
-}));
+// Spy SweetAlert2
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: false } as never);
 
 describe('FormulaTabComponent — ReactiveForms', () => {
   let fixture: ComponentFixture<FormulaTabComponent>;
@@ -76,14 +73,14 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     fixture = TestBed.createComponent(FormulaTabComponent);
     component = fixture.componentInstance;
     // Set required inputs before change detection
-    component.productId = 'product-1';
-    component.formArray = fb.array<FormGroup>([]);
+    fixture.componentRef.setInput('productId', 'product-1');
+    fixture.componentRef.setInput('formArray', fb.array<FormGroup>([]));
   });
 
   // ── RED 1: Component accepts formArray input ─────────────────────
   it('should accept a formArray input from the parent', () => {
-    expect(component.formArray).toBeDefined();
-    expect(component.formArray.length).toBe(0);
+    expect(component.formArray()).toBeDefined();
+    expect(component.formArray().length).toBe(0);
   });
 
   // ── RED 2: Loaded formulas populate the FormArray ───────────────
@@ -119,19 +116,19 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     fixture.detectChanges();
 
     // The formArray should now have 2 FormGroups
-    expect(component.formArray.length).toBe(2);
-    expect(component.formArray.at(0).get('componentProductId')?.value).toBe('comp-a');
-    expect(component.formArray.at(0).get('quantity')?.value).toBe(2.5);
-    expect(component.formArray.at(0).get('unitOfMeasureId')?.value).toBe('uom-1');
-    expect(component.formArray.at(0).get('sequenceNumber')?.value).toBe(0);
-    expect(component.formArray.at(1).get('notes')?.value).toBeNull();
+    expect(component.formArray().length).toBe(2);
+    expect(component.formArray().at(0).get('componentProductId')?.value).toBe('comp-a');
+    expect(component.formArray().at(0).get('quantity')?.value).toBe(2.5);
+    expect(component.formArray().at(0).get('unitOfMeasureId')?.value).toBe('uom-1');
+    expect(component.formArray().at(0).get('sequenceNumber')?.value).toBe(0);
+    expect(component.formArray().at(1).get('notes')?.value).toBeNull();
   });
 
   // ── RED 3: Adding a new formula creates a FormGroup in formArray ─
   it('should create a new FormGroup in formArray when adding a formula', () => {
     fixture.detectChanges();
 
-    const initialLength = component.formArray.length;
+    const initialLength = component.formArray().length;
 
     // Click the "Agregar componente" button
     const addBtn = fixture.debugElement.query(By.css('.sub-table-header-actions .tb-btn'));
@@ -139,9 +136,9 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     (addBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(initialLength + 1);
+    expect(component.formArray().length).toBe(initialLength + 1);
 
-    const newGroup = component.formArray.at(component.formArray.length - 1);
+    const newGroup = component.formArray().at(component.formArray().length - 1);
     expect(newGroup.get('componentProductId')).toBeTruthy();
     expect(newGroup.get('quantity')).toBeTruthy();
     expect(newGroup.get('unitOfMeasureId')).toBeTruthy();
@@ -153,7 +150,7 @@ describe('FormulaTabComponent — ReactiveForms', () => {
   it('should remove the temporary FormGroup when cancelling add', () => {
     fixture.detectChanges();
 
-    const initialLength = component.formArray.length;
+    const initialLength = component.formArray().length;
 
     // Click Add
     const addBtn = fixture.debugElement.query(By.css('.sub-table-header-actions .tb-btn'));
@@ -161,7 +158,7 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     (addBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(initialLength + 1);
+    expect(component.formArray().length).toBe(initialLength + 1);
 
     // Click Cancel
     const cancelBtn = fixture.debugElement.query(By.css('button[matTooltip="Cancelar"]'));
@@ -169,7 +166,7 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     (cancelBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(initialLength);
+    expect(component.formArray().length).toBe(initialLength);
   });
 
   // ── RED 5: Editing a row propagates dirty state to the FormGroup ─
@@ -192,7 +189,7 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     formulaServiceMock.list.mockReturnValue(of(mockFormulas));
     fixture.detectChanges();
 
-    expect(component.formArray.at(0).dirty).toBe(false);
+    expect(component.formArray().at(0).dirty).toBe(false);
 
     // Click edit button
     const editBtn = fixture.debugElement.query(By.css('button[matTooltip="Editar"]'));
@@ -201,12 +198,12 @@ describe('FormulaTabComponent — ReactiveForms', () => {
     fixture.detectChanges();
 
     // Simulate user changing a value (marks as dirty via markAsDirty)
-    const row = component.formArray.at(0);
+    const row = component.formArray().at(0);
     row.get('quantity')?.setValue(5.0);
     row.get('quantity')?.markAsDirty();
     fixture.detectChanges();
 
-    expect(component.formArray.at(0).dirty).toBe(true);
+    expect(component.formArray().at(0).dirty).toBe(true);
   });
 
   // ── RED 6: View mode shows component names (via getComponentName) ─

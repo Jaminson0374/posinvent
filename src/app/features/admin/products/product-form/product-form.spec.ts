@@ -5,16 +5,12 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
+import Swal from 'sweetalert2';
+
 import { ProductFormComponent } from './product-form';
 
-// Mock SweetAlert2 for test environment
-vi.mock('sweetalert2', () => ({
-  default: {
-    fire: vi.fn().mockResolvedValue({ isConfirmed: false }),
-  },
-}));
-
-import Swal from 'sweetalert2';
+// Spy SweetAlert2 for test environment
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: false } as never);
 
 describe('ProductFormComponent — tab navigation', () => {
   let fixture: ComponentFixture<ProductFormComponent>;
