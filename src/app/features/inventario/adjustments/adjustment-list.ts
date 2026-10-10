@@ -7,10 +7,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { AdjustmentService } from '../../../core/services/adjustment.service';
 import { StockAdjustment } from '../../../core/models/adjustment.model';
 import { PageResponse } from '../../../core/models/page.model';
+import { AdjustmentDetailDialogComponent } from './adjustment-detail-dialog';
+import { typeClass, typeLabel } from './adjustment-format';
 
 @Component({
   selector: 'app-adjustment-list',
@@ -25,6 +28,7 @@ import { PageResponse } from '../../../core/models/page.model';
     MatChipsModule,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule,
     RouterLink,
   ],
   templateUrl: './adjustment-list.html',
@@ -32,6 +36,7 @@ import { PageResponse } from '../../../core/models/page.model';
 })
 export class AdjustmentListComponent implements OnInit {
   private readonly service = inject(AdjustmentService);
+  private readonly dialog = inject(MatDialog);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -47,6 +52,7 @@ export class AdjustmentListComponent implements OnInit {
     'quantityBefore',
     'quantityAfter',
     'reason',
+    'actions',
   ];
 
   ngOnInit(): void {
@@ -74,35 +80,10 @@ export class AdjustmentListComponent implements OnInit {
     this.load();
   }
 
-  typeLabel(type: string): string {
-    switch (type) {
-      case 'PHYSICAL_COUNT':
-        return 'Conteo físico';
-      case 'DAMAGE':
-        return 'Daño';
-      case 'EXPIRATION':
-        return 'Vencimiento';
-      case 'THEFT':
-        return 'Hurto';
-      case 'OTHER':
-        return 'Otro';
-      default:
-        return type;
-    }
-  }
+  readonly typeLabel = typeLabel;
+  readonly typeClass = typeClass;
 
-  typeClass(type: string): string {
-    switch (type) {
-      case 'PHYSICAL_COUNT':
-        return 'chip-physical';
-      case 'DAMAGE':
-        return 'chip-damage';
-      case 'EXPIRATION':
-        return 'chip-expiration';
-      case 'THEFT':
-        return 'chip-theft';
-      default:
-        return 'chip-other';
-    }
+  openDetail(adjustment: StockAdjustment): void {
+    this.dialog.open(AdjustmentDetailDialogComponent, { data: adjustment, width: '520px' });
   }
 }

@@ -6,10 +6,13 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { DisposalService } from '../../../core/services/disposal.service';
 import type { DisposalResponse } from '../../../core/models/disposal.model';
 import type { PageResponse } from '../../../core/models/page.model';
+import { DisposalDetailDialogComponent } from './disposal-detail-dialog';
+import { typeClass, typeLabel } from './disposal-format';
 
 @Component({
   selector: 'app-disposal-list',
@@ -24,6 +27,7 @@ import type { PageResponse } from '../../../core/models/page.model';
     MatProgressSpinnerModule,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule,
     RouterLink,
   ],
   templateUrl: './disposal-list.html',
@@ -33,6 +37,7 @@ import type { PageResponse } from '../../../core/models/page.model';
 })
 export class DisposalListComponent implements OnInit {
   private readonly service = inject(DisposalService);
+  private readonly dialog = inject(MatDialog);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -47,6 +52,7 @@ export class DisposalListComponent implements OnInit {
     'quantity',
     'unitCost',
     'reason',
+    'actions',
   ];
 
   ngOnInit(): void {
@@ -74,29 +80,10 @@ export class DisposalListComponent implements OnInit {
     this.load();
   }
 
-  typeLabel(t: string): string {
-    switch (t) {
-      case 'DECOMISO_SANITARIO':
-        return 'Decomiso sanitario';
-      case 'RESIDUO_VENDIBLE':
-        return 'Residuo vendible';
-      case 'MERMA_PROCESO':
-        return 'Merma proceso';
-      default:
-        return t;
-    }
-  }
+  readonly typeLabel = typeLabel;
+  readonly typeClass = typeClass;
 
-  typeClass(t: string): string {
-    switch (t) {
-      case 'DECOMISO_SANITARIO':
-        return 'chip-sanitario';
-      case 'RESIDUO_VENDIBLE':
-        return 'chip-residuo';
-      case 'MERMA_PROCESO':
-        return 'chip-merma';
-      default:
-        return '';
-    }
+  openDetail(disposal: DisposalResponse): void {
+    this.dialog.open(DisposalDetailDialogComponent, { data: disposal, width: '520px' });
   }
 }
