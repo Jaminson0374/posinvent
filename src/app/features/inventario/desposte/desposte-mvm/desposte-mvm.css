@@ -1,0 +1,228 @@
+.mvm-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.mvm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.mvm-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.mvm-subtitle {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.mvm-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mvm-date-field {
+  width: 160px;
+}
+
+.mvm-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.mvm-legend-title {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.8rem;
+}
+
+.mvm-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.mvm-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+.mvm-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.mvm-summary-total {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.mvm-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.mvm-pill-warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.error-msg {
+  color: #ef4444;
+  text-align: center;
+  padding: 24px;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #94a3b8;
+  padding: 24px;
+}
+
+.mvm-table {
+  width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.cell-mono {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.cell-num {
+  text-align: right !important;
+}
+
+.cell-waste {
+  color: #b45309;
+}
+
+.cell-shrink {
+  color: #0f766e;
+}
+
+.cell-tol {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+/* ── Stacked mass-balance bar ── */
+.balance-bar {
+  display: flex;
+  width: 120px;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.balance-seg {
+  display: block;
+  height: 100%;
+}
+
+.seg-cuts {
+  background: #22c55e;
+}
+
+.seg-waste {
+  background: #f59e0b;
+}
+
+.seg-shrink {
+  background: #0d9488;
+}
+
+/* ── Yield badge ── */
+.yield-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.yield-good {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.yield-warn {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.yield-bad {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ── Tolerance badge ── */
+.tol-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tol-ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tol-off {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.mvm-row-clickable {
+  cursor: pointer;
+}
+
+.mvm-row-clickable:hover {
+  background: #f0f9ff;
+}

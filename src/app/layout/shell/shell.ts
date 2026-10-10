@@ -109,6 +109,7 @@ export class ShellComponent {
         { label: 'Stock', icon: 'layers', route: '/inventario/stock' },
         { label: 'Entradas/Salidas', icon: 'import_export', route: '/inventario/stock-manual' },
         { label: 'Desposte', icon: 'content_cut', route: '/inventario/desposte' },
+        { label: 'MVM (merma)', icon: 'balance', route: '/inventario/desposte/mvm' },
         { label: 'Listas de precios', icon: 'price_change', route: '/inventario/precios' },
         { label: 'Registro animal', icon: 'pets', route: '/inventario/animales' },
         { label: 'Kardex', icon: 'history', route: '/inventario/kardex' },

@@ -1,0 +1,166 @@
+<div class="mvm-page">
+  <div class="mvm-header">
+    <div>
+      <h2 class="mvm-title">MVM · Merma y rendimiento por desposte</h2>
+      <p class="mvm-subtitle">Balance de masa: cortes aprovechables, desperdicio y merma técnica.</p>
+    </div>
+
+    <div class="mvm-filters">
+      <mat-form-field appearance="outline" class="mvm-date-field">
+        <mat-label>Desde</mat-label>
+        <input
+          matInput
+          type="date"
+          [value]="from()"
+          (change)="onFromChange($any($event.target).value)"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mvm-date-field">
+        <mat-label>Hasta</mat-label>
+        <input
+          matInput
+          type="date"
+          [value]="to()"
+          (change)="onToChange($any($event.target).value)"
+        />
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" (click)="applyFilters()">Filtrar</button>
+      <button mat-button (click)="clearFilters()">Limpiar</button>
+    </div>
+  </div>
+
+  <div class="mvm-legend" aria-label="Leyenda de colores">
+    <span class="mvm-legend-title">Leyenda</span>
+    <span class="mvm-legend-item"><i class="mvm-swatch seg-cuts"></i> Cortes aprovechables</span>
+    <span class="mvm-legend-item"><i class="mvm-swatch seg-waste"></i> Desperdicio</span>
+    <span class="mvm-legend-item"><i class="mvm-swatch seg-shrink"></i> Merma técnica</span>
+  </div>
+
+  @if (!loading() && !error()) {
+    <div class="mvm-summary">
+      <span class="mvm-summary-total">{{ totalElements() }} despostes</span>
+      <span class="mvm-pill">
+        Rendimiento promedio: <strong>{{ avgYield() | number: '1.0-2' }}%</strong>
+      </span>
+      <span class="mvm-pill" [class.mvm-pill-warn]="outOfTolerancePct() > 0">
+        Fuera de tolerancia: <strong>{{ outOfTolerancePct() | number: '1.0-1' }}%</strong>
+        ({{ outOfToleranceCount() }})
+      </span>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="spinner-container"><mat-spinner diameter="40" /></div>
+  }
+
+  @if (error()) {
+    <p class="error-msg">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error() && totalElements() === 0) {
+    <p class="empty-msg">No hay despostes en el rango seleccionado.</p>
+  }
+
+  @if (!loading() && !error() && totalElements() > 0) {
+    <mat-table [dataSource]="rows()" class="mvm-table">
+      <ng-container matColumnDef="createdAt">
+        <mat-header-cell *matHeaderCellDef>Fecha</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.createdAt | date: 'dd/MM/yyyy HH:mm' }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="sourceBatchId">
+        <mat-header-cell *matHeaderCellDef>Lote origen</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-mono">{{ row.sourceBatchId | slice: 0 : 8 }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="yieldPercentage">
+        <mat-header-cell *matHeaderCellDef>Rendimiento</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <span [class]="'yield-badge ' + yieldClass(row.yieldPercentage)">
+            {{ row.yieldPercentage | number: '1.0-2' }}%
+          </span>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="balance">
+        <mat-header-cell *matHeaderCellDef>Balance</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <div class="balance-bar" aria-label="Balance de masa">
+            @for (segment of balanceSegments(row); track segment.key) {
+              <span
+                [class]="'balance-seg ' + segment.class"
+                [style.width.%]="segment.pct"
+                [attr.title]="segment.label + ': ' + segment.value + ' kg'"
+              ></span>
+            }
+          </div>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="inputWeight">
+        <mat-header-cell *matHeaderCellDef>W_in</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num">{{ row.inputWeight | number: '1.0-2' }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="totalCutsWeight">
+        <mat-header-cell *matHeaderCellDef>Cortes</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num">
+          {{ row.totalCutsWeight | number: '1.0-2' }}
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="wasteWeight">
+        <mat-header-cell *matHeaderCellDef>Desperdicio</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num cell-waste">
+          {{ row.wasteWeight | number: '1.0-2' }}
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="shrinkWeight">
+        <mat-header-cell *matHeaderCellDef>Merma técnica</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num cell-shrink">
+          {{ row.shrinkWeight | number: '1.0-2' }}
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="deviation">
+        <mat-header-cell *matHeaderCellDef>ΔMasa</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num">{{ formatSigned(row.deviation) }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="tolerance">
+        <mat-header-cell *matHeaderCellDef>Tolerancia</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <span [class]="'tol-badge ' + (row.withinTolerance ? 'tol-ok' : 'tol-off')">
+            {{ row.withinTolerance ? 'Dentro' : 'Fuera' }}
+          </span>
+          <span class="cell-tol">±{{ row.tolerance | number: '1.0-2' }}</span>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="totalCommercialValue">
+        <mat-header-cell *matHeaderCellDef>Valor comercial</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num">
+          {{ row.totalCommercialValue | currency: 'COP' : 'symbol-narrow' : '1.0-2' : 'es-CO' }}
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" />
+      <mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="mvm-row-clickable"
+        (click)="openDetail(row)"
+      />
+    </mat-table>
+
+    <mat-paginator
+      [length]="totalElements()"
+      [pageIndex]="page()"
+      [pageSize]="size()"
+      [pageSizeOptions]="[10, 20, 50]"
+      (page)="onPageChange($event)"
+    />
+  }
+</div>
