@@ -6,11 +6,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import type { PageEvent } from '@angular/material/paginator';
 
 import { KardexListComponent } from './kardex-list';
+import { KardexDetailDialogComponent } from './kardex-detail-dialog';
 import { KardexService } from '../../../core/services/kardex.service';
 import { ProductService } from '../../../core/services/product.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
@@ -55,6 +57,7 @@ describe('KardexListComponent', () => {
   const warehouseService = { search: vi.fn() };
 
   afterEach(() => {
+    vi.restoreAllMocks();
     TestBed.resetTestingModule();
   });
 
@@ -191,6 +194,19 @@ describe('KardexListComponent', () => {
     expect(component.typeClass('TRANSFER_OUT')).toBe('chip-transfer');
     expect(component.typeClass('DISPOSAL')).toBe('chip-disposal');
     expect(component.typeClass('UNKNOWN')).toBe('');
+  });
+
+  it('abre el diálogo de detalle pasando la fila como data', () => {
+    const openSpy = vi.spyOn(MatDialog.prototype, 'open').mockReturnValue({
+      afterClosed: () => of(undefined),
+    } as unknown as MatDialogRef<unknown>);
+
+    component.openDetail(movement);
+
+    expect(openSpy).toHaveBeenCalledWith(
+      KardexDetailDialogComponent,
+      expect.objectContaining({ data: movement, width: '560px' }),
+    );
   });
 
   it('navega al documento de origen según el tipo de referencia', () => {

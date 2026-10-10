@@ -14,12 +14,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { KardexService } from '../../../core/services/kardex.service';
 import { InventoryMovement, MovementType } from '../../../core/models/kardex.model';
 import { PageResponse } from '../../../core/models/page.model';
 import { WarehousePickerComponent } from '../../shared/warehouse-picker';
 import { ProductSearchComponent } from '../../shared/product-search';
 import { BatchPickerComponent } from '../../shared/batch-picker';
+import { KardexDetailDialogComponent } from './kardex-detail-dialog';
+import { typeClass, typeLabel } from './kardex-format';
 
 @Component({
   selector: 'app-kardex-list',
@@ -39,6 +43,8 @@ import { BatchPickerComponent } from '../../shared/batch-picker';
     MatChipsModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatButtonModule,
+    MatDialogModule,
     WarehousePickerComponent,
     ProductSearchComponent,
     BatchPickerComponent,
@@ -50,6 +56,7 @@ export class KardexListComponent implements OnInit {
   private readonly service = inject(KardexService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
 
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -65,6 +72,7 @@ export class KardexListComponent implements OnInit {
     'unitCost',
     'warehouseId',
     'referenceType',
+    'actions',
   ];
 
   readonly movementTypeOptions: ReadonlyArray<{ value: string; label: string }> = [
@@ -189,57 +197,11 @@ export class KardexListComponent implements OnInit {
     this.loadData();
   }
 
-  typeLabel(type: string): string {
-    switch (type) {
-      case 'ENTRY':
-        return 'Entrada';
-      case 'EXIT':
-        return 'Salida';
-      case 'ADJUSTMENT':
-        return 'Ajuste';
-      case 'TRANSFER_IN':
-        return 'Traslado +';
-      case 'TRANSFER_OUT':
-        return 'Traslado −';
-      case 'DISPOSAL':
-        return 'Decomiso';
-      case 'RETURN':
-        return 'Devolución';
-      case 'PRODUCTION_CONSUMPTION':
-        return 'Cons. Prod.';
-      case 'PRODUCTION_OUTPUT':
-        return 'Salida Prod.';
-      case 'PRODUCTION_SHRINKAGE':
-        return 'Merma Prod.';
-      default:
-        return type;
-    }
-  }
+  readonly typeLabel = typeLabel;
+  readonly typeClass = typeClass;
 
-  typeClass(type: string): string {
-    switch (type) {
-      case 'ENTRY':
-        return 'chip-entry';
-      case 'EXIT':
-        return 'chip-exit';
-      case 'ADJUSTMENT':
-        return 'chip-adj';
-      case 'TRANSFER_IN':
-      case 'TRANSFER_OUT':
-        return 'chip-transfer';
-      case 'DISPOSAL':
-        return 'chip-disposal';
-      case 'RETURN':
-        return 'chip-return';
-      case 'PRODUCTION_CONSUMPTION':
-        return 'chip-prod-consume';
-      case 'PRODUCTION_OUTPUT':
-        return 'chip-prod-output';
-      case 'PRODUCTION_SHRINKAGE':
-        return 'chip-prod-shrink';
-      default:
-        return '';
-    }
+  openDetail(movement: InventoryMovement): void {
+    this.dialog.open(KardexDetailDialogComponent, { data: movement, width: '560px' });
   }
 
   viewSourceDocument(movement: InventoryMovement): void {
