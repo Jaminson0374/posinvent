@@ -41,7 +41,7 @@ export class DisposalFormComponent {
   readonly error = signal<string | null>(null);
 
   readonly typeOptions: ReadonlyArray<{ value: DisposalType; label: string }> = [
-    { value: 'SANITARIO', label: 'Sanitario' },
+    { value: 'DECOMISO_SANITARIO', label: 'Decomiso sanitario' },
     { value: 'RESIDUO_VENDIBLE', label: 'Residuo vendible' },
     { value: 'MERMA_PROCESO', label: 'Merma de proceso' },
   ];
@@ -50,7 +50,7 @@ export class DisposalFormComponent {
     productId: ['', Validators.required],
     batchId: [''],
     warehouseId: ['', Validators.required],
-    disposalType: ['SANITARIO' as string, Validators.required],
+    disposalType: ['DECOMISO_SANITARIO' as string, Validators.required],
     quantity: [1, [Validators.required, Validators.min(0.001)]],
     reason: ['', Validators.required],
   });
@@ -90,7 +90,7 @@ export class DisposalFormComponent {
         next: () => {
           this.saving.set(false);
           Swal.fire({ icon: 'success', title: 'Decomiso creado', confirmButtonColor: '#15803d' });
-          this.form.reset({ disposalType: 'SANITARIO', quantity: 1 });
+          this.form.reset({ disposalType: 'DECOMISO_SANITARIO', quantity: 1 });
         },
         error: (err: any) => {
           this.saving.set(false);
