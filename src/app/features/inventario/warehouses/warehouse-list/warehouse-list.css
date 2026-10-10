@@ -1,8 +1,16 @@
+.wl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 24px;
+}
+
 .section-title {
   font-size: 1.5rem;
   font-weight: 600;
   color: #1e293b;
-  margin-bottom: 24px;
+  margin: 0;
 }
 
 .spinner-container {

@@ -518,6 +518,20 @@ export const routes: Routes = [
                   ),
               },
               {
+                path: 'nuevo',
+                loadComponent: () =>
+                  import('./features/inventario/warehouses/warehouse-form/warehouse-form').then(
+                    (m) => m.WarehouseFormComponent,
+                  ),
+              },
+              {
+                path: ':id/editar',
+                loadComponent: () =>
+                  import('./features/inventario/warehouses/warehouse-form/warehouse-form').then(
+                    (m) => m.WarehouseFormComponent,
+                  ),
+              },
+              {
                 path: ':id',
                 loadComponent: () =>
                   import('./features/inventario/warehouses/warehouse-detail/warehouse-detail').then(
