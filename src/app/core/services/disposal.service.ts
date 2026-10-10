@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import type { DisposalRequest, DisposalResponse } from '../models/disposal.model';
+import type { DisposalRequest, DisposalResponse, ExpiringBatch } from '../models/disposal.model';
 import type { PageResponse } from '../models/page.model';
 
 @Injectable({ providedIn: 'root' })
@@ -15,5 +15,9 @@ export class DisposalService {
 
   create(request: DisposalRequest): Observable<DisposalResponse> {
     return this.http.post<DisposalResponse>(this.base, request);
+  }
+
+  expiringSoon(days = 30): Observable<ExpiringBatch[]> {
+    return this.http.get<ExpiringBatch[]>(`${this.base}/expiring-soon?days=${days}`);
   }
 }

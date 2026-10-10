@@ -395,6 +395,13 @@ export const routes: Routes = [
               import('./features/inventario/kardex/kardex-list').then((m) => m.KardexListComponent),
           },
           {
+            path: 'vencimientos',
+            loadComponent: () =>
+              import('./features/inventario/expiring/expiring-batches').then(
+                (m) => m.ExpiringBatchesComponent,
+              ),
+          },
+          {
             path: 'ajustes',
             loadComponent: () =>
               import('./features/inventario/adjustments/adjustment-list').then(

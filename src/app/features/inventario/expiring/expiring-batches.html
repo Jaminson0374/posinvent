@@ -1,0 +1,91 @@
+<div class="eb-page">
+  <div class="eb-header">
+    <h2 class="eb-title">Vencimientos</h2>
+    <mat-form-field appearance="outline" class="eb-filter">
+      <mat-label>Próximos días</mat-label>
+      <mat-select
+        [value]="days()"
+        aria-label="Días para el filtro de vencimientos"
+        (selectionChange)="onDaysChange($event.value)"
+      >
+        @for (option of daysOptions; track option) {
+          <mat-option [value]="option">{{ option }} días</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (!loading() && !error()) {
+    <div class="eb-summary">
+      <span class="eb-summary-total">{{ total() }} lotes requieren atención</span>
+      <span class="eb-count eb-count-expired">Vencidos: {{ expiredCount() }}</span>
+      <span class="eb-count eb-count-critical">≤ 7 días: {{ criticalCount() }}</span>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="spinner-container"><mat-spinner diameter="40" /></div>
+  }
+
+  @if (error()) {
+    <p class="error-msg">{{ error() }}</p>
+  }
+
+  @if (!loading() && !error() && total() === 0) {
+    <p class="empty-msg">No hay lotes por vencer en los próximos {{ days() }} días.</p>
+  }
+
+  @if (!loading() && !error() && total() > 0) {
+    <mat-table [dataSource]="rows()" class="eb-table">
+      <ng-container matColumnDef="urgency">
+        <mat-header-cell *matHeaderCellDef>Urgencia</mat-header-cell>
+        <mat-cell *matCellDef="let row">
+          <span [class]="'chip ' + urgencyClass(row.urgency)">{{ urgencyLabel(row.urgency) }}</span>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="product">
+        <mat-header-cell *matHeaderCellDef>Producto</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.batch.product_name }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="warehouse">
+        <mat-header-cell *matHeaderCellDef>Bodega</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.batch.warehouse_name }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="batch">
+        <mat-header-cell *matHeaderCellDef>Lote</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-mono">{{
+          row.batch.batch_id | slice: 0 : 8
+        }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="expiration">
+        <mat-header-cell *matHeaderCellDef>Vencimiento</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{
+          row.expiresAt ? (row.expiresAt | date: 'dd/MM/yyyy') : '—'
+        }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="days">
+        <mat-header-cell *matHeaderCellDef>Días restantes</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num">{{ formatDays(row.days) }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="qty">
+        <mat-header-cell *matHeaderCellDef>Stock actual</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="cell-num">{{
+          row.batch.current_qty | number: '1.0-2'
+        }}</mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="columns; sticky: true" />
+      <mat-row
+        *matRowDef="let row; columns: columns"
+        class="eb-row-clickable"
+        (click)="goToBatch(row)"
+      />
+    </mat-table>
+  }
+</div>
