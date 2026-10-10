@@ -32,8 +32,14 @@ describe('DesposteManualComponent', () => {
     purchaseCost: 580_000,
     status: 'OPEN',
     notes: null,
+    productId: 'ff61ea18-ae57-45fa-89f0-fd0dd6762f39',
+    productName: 'Paleta',
+    supplierName: 'Proveedor Test',
+    warehouseName: 'Bodega Cortes',
     createdBy: '8bf3f501-ebbe-4104-b77c-3d85e06ae3b5',
     createdAt: '2026-05-14T10:00:00Z',
+    updatedBy: null,
+    updatedAt: '2026-05-14T10:00:00Z',
   };
 
   const product: Product = {
@@ -72,9 +78,12 @@ describe('DesposteManualComponent', () => {
     incomeAccountId: null,
     inventoryAccountId: null,
     costOfSalesAcctId: null,
+    accountingTemplateId: null,
     active: true,
     version: 0,
+    createdBy: 'user-001',
     createdAt: '2026-05-14T10:00:00Z',
+    updatedBy: null,
     updatedAt: '2026-05-14T10:00:00Z',
     warehouses: [],
     suppliers: [],
@@ -105,7 +114,10 @@ describe('DesposteManualComponent', () => {
     location: 'Zona A',
     warehouseType: 'CORTES',
     active: true,
+    createdBy: 'user-001',
     createdAt: '2026-05-14T10:00:00Z',
+    updatedBy: null,
+    updatedAt: '2026-05-14T10:00:00Z',
   };
 
   const result: ManualDesposteResult = {

@@ -13,10 +13,7 @@ import { PriceListService } from '../../../../core/services/price-list.service';
 import { QuickCreatePriceListDialogComponent } from '../dialogs/quick-create-price-list.dialog';
 import type { PriceList } from '../../../../core/models/product-catalog.model';
 
-vi.mock('sweetalert2', () => ({
-  default: { fire: vi.fn() },
-  __esModule: true,
-}));
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: true } as never);
 
 const mayorista: PriceList = {
   id: 'pl-1',

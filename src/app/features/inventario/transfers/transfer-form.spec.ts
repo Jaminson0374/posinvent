@@ -5,16 +5,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
+import Swal from 'sweetalert2';
 
 import { TransferFormComponent } from './transfer-form';
 import { TransferService } from '../../../core/services/transfer.service';
 import { ProductService } from '../../../core/services/product.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 
-vi.mock('sweetalert2', () => ({
-  default: { fire: vi.fn().mockResolvedValue({ isConfirmed: true }) },
-  __esModule: true,
-}));
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: true } as never);
 
 describe('TransferFormComponent', () => {
   let fixture: ComponentFixture<TransferFormComponent>;

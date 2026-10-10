@@ -14,7 +14,7 @@
 
   <!-- Add new row -->
   @if (adding()) {
-    @let addGroup = formArray.at(formArray.length - 1);
+    @let addGroup = formArray().at(formArray().length - 1);
     <div class="pres-edit-row" [formGroup]="$any(addGroup)">
       <mat-form-field appearance="outline" class="pres-field-sm">
         <mat-label>Código</mat-label>
@@ -56,7 +56,7 @@
     </div>
   }
 
-  @if (formArray.length === 0 && !adding()) {
+  @if (formArray().length === 0 && !adding()) {
     <p class="sub-table-empty">Sin presentaciones definidas</p>
   } @else {
     <table class="pres-table">
@@ -72,7 +72,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (group of formArray.controls; track $index; let i = $index) {
+        @for (group of formArray().controls; track $index; let i = $index) {
           @if (editingIndex() === i) {
             <!-- Edit row -->
             <tr [formGroup]="$any(group)">

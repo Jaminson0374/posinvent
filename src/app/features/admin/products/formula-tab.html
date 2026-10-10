@@ -18,7 +18,7 @@
   }
 
   @if (adding()) {
-    @let addGroup = formArray.at(formArray.length - 1);
+    @let addGroup = formArray().at(formArray().length - 1);
     <div class="formula-edit-row" [formGroup]="$any(addGroup)">
       <div>
         <mat-form-field appearance="outline" class="formula-field-lg">
@@ -65,7 +65,7 @@
     </div>
   }
 
-  @if (formArray.length === 0 && !adding()) {
+  @if (formArray().length === 0 && !adding()) {
     <p class="sub-table-empty">Sin componentes definidos en la fórmula</p>
   } @else {
     <table class="formula-table">
@@ -80,7 +80,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (group of formArray.controls; track $index; let i = $index) {
+        @for (group of formArray().controls; track $index; let i = $index) {
           @if (editingIndex() === i) {
             <tr [formGroup]="$any(group)">
               <td>

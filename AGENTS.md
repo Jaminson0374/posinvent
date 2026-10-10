@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is an Angular 21 application using standalone components, signals, and server-side rendering (SSR). The project uses Vitest for testing and Prettier for code formatting.
+This is an Angular 21 application using standalone components, signals, and server-side rendering (SSR). The project uses the **Angular unit-test runner** (`ng test` — Vitest under the hood, AOT compilation) and Prettier for code formatting.
 
 ## Build Commands
 
@@ -19,9 +19,9 @@ npm run build
 npm run watch
 # or: ng build --watch --configuration development
 
-# Run unit tests (Vitest)
-npm test
-# or: ng test
+# Run unit tests (Angular unit-test runner — `@angular/build:unit-test`)
+ng test                 # watch mode
+ng test --watch=false   # one-shot (CI)
 
 # Run SSR server
 npm run serve:ssr:posinvent
@@ -29,16 +29,10 @@ npm run serve:ssr:posinvent
 
 ### Running a Single Test
 
-To run a specific test file, use Vitest directly:
+Use the Angular runner with `--include` (supports a path or glob):
 
 ```bash
-npx vitest run src/app/app.spec.ts
-```
-
-Or filter by test name:
-
-```bash
-npx vitest run --testNamePattern="should create the app"
+ng test --watch=false --include "src/app/app.spec.ts"
 ```
 
 ### Code Generation

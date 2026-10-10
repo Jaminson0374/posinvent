@@ -7,6 +7,7 @@ import { ChangeDetectionStrategy } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
+import Swal from 'sweetalert2';
 
 import type { SalesDocument, SaleItem } from '../../../core/models/sale.model';
 import type { PageResponse } from '../../../core/models/page.model';
@@ -17,16 +18,8 @@ import { PosDevolutionComponent } from './pos-devolution';
 
 registerLocaleData(localeEsCo);
 
-// Mock sweetalert2 — jsdom doesn't support window.matchMedia
-vi.mock('sweetalert2', () => {
-  const mockSwal = {
-    fire: vi.fn().mockResolvedValue({ isConfirmed: true }),
-  };
-  return {
-    default: mockSwal,
-    __esModule: true,
-  };
-});
+// Spy sweetalert2 — jsdom doesn't support window.matchMedia
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: true } as never);
 
 const mockItem: SaleItem = {
   id: 'item-1',

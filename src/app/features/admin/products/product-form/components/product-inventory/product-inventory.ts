@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { FormArray, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -34,12 +34,12 @@ export interface WarehouseOption {
   styleUrl: './product-inventory.css',
 })
 export class ProductInventoryComponent {
-  @Input({ required: true }) form!: FormGroup;
-  @Input({ required: true }) warehousesArray!: FormArray;
-  @Input() warehouseList: WarehouseOption[] = [];
-  @Input() isEditing = false;
-  @Output() addWarehouse = new EventEmitter<void>();
-  @Output() removeWarehouse = new EventEmitter<number>();
+  readonly form = input.required<FormGroup>();
+  readonly warehousesArray = input.required<FormArray>();
+  readonly warehouseList = input<WarehouseOption[]>([]);
+  readonly isEditing = input(false);
+  readonly addWarehouse = output<void>();
+  readonly removeWarehouse = output<number>();
 
   readonly costingOptions = [
     { value: 'PEPS', label: 'PEPS (Primero en entrar, primero en salir)' },

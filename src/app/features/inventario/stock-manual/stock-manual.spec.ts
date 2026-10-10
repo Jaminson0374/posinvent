@@ -4,15 +4,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import Swal from 'sweetalert2';
 
 import { StockManualComponent } from './stock-manual';
 import { ProductService } from '../../../core/services/product.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 
-vi.mock('sweetalert2', () => ({
-  default: { fire: vi.fn().mockResolvedValue({ isConfirmed: true }) },
-  __esModule: true,
-}));
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: true } as never);
 
 describe('StockManualComponent', () => {
   let fixture: ComponentFixture<StockManualComponent>;

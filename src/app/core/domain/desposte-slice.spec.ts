@@ -18,8 +18,14 @@ describe('desposte-slice', () => {
     purchaseCost: 1_000,
     status: 'OPEN',
     notes: null,
+    productId: 'product-001',
+    productName: 'Producto Test',
+    supplierName: 'Proveedor Test',
+    warehouseName: 'Bodega Canal',
     createdBy: 'user-001',
     createdAt: '2026-05-13T08:00:00Z',
+    updatedBy: null,
+    updatedAt: '2026-05-13T08:00:00Z',
   };
 
   const request: ManualDesposteRequest = {

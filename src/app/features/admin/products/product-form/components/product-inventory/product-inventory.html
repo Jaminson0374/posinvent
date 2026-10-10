@@ -1,4 +1,4 @@
-<ng-container [formGroup]="form">
+<ng-container [formGroup]="form()">
   <!-- ══ CARD: CONTROL DE INVENTARIO ════════════════════════════════ -->
   <div class="pi-card">
     <div class="pi-card__header pi-card__header--red">
@@ -65,7 +65,7 @@
     </div>
     <mat-divider />
     <div class="pi-card__body">
-      @if (isEditing) {
+      @if (isEditing()) {
         <div class="pi-wh-header">
           <button class="pi-add-warehouse-btn" mat-stroked-button (click)="addWarehouse.emit()">
             <mat-icon>add</mat-icon> Agregar bodega
@@ -73,12 +73,12 @@
         </div>
       }
 
-      @for (wRow of warehousesArray.controls; track $index; let i = $index) {
+      @for (wRow of warehousesArray().controls; track $index; let i = $index) {
         <div class="pi-warehouse-row" [formGroup]="$any(wRow)">
           <mat-form-field appearance="outline">
             <mat-label>Bodega</mat-label>
             <mat-select formControlName="warehouseId">
-              @for (w of warehouseList; track w.id) {
+              @for (w of warehouseList(); track w.id) {
                 <mat-option [value]="w.id">{{ w.name }}</mat-option>
               }
             </mat-select>
@@ -96,7 +96,7 @@
             </mat-select>
           </mat-form-field>
           <mat-checkbox formControlName="isDefault">Predeterminada</mat-checkbox>
-          @if (isEditing) {
+          @if (isEditing()) {
             <button
               mat-icon-button
               color="warn"
@@ -109,7 +109,7 @@
         </div>
       }
 
-      @if (warehousesArray.length === 0) {
+      @if (warehousesArray().length === 0) {
         <p class="pi-warehouse-empty">Sin bodegas asignadas</p>
       }
     </div>

@@ -1,4 +1,4 @@
-<ng-container [formGroup]="form">
+<ng-container [formGroup]="form()">
   <!-- ══ CARD: CUENTAS CONTABLES ════════════════════════════════════ -->
   <div class="pa-card">
     <div class="pa-card__header pa-card__header--indigo">
@@ -16,7 +16,7 @@
         <mat-label>Cuenta de ingresos (Clase 4)</mat-label>
         <mat-select formControlName="incomeAccountId">
           <mat-option [value]="null">— Ninguna —</mat-option>
-          @for (a of incomeAccounts; track a.id) {
+          @for (a of incomeAccounts(); track a.id) {
             <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
           }
         </mat-select>
@@ -26,7 +26,7 @@
         <mat-label>Cuenta de inventario (Clase 1)</mat-label>
         <mat-select formControlName="inventoryAccountId">
           <mat-option [value]="null">— Ninguna —</mat-option>
-          @for (a of inventoryAccounts; track a.id) {
+          @for (a of inventoryAccounts(); track a.id) {
             <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
           }
         </mat-select>
@@ -36,7 +36,7 @@
         <mat-label>Cuenta de costo de ventas (Clase 6)</mat-label>
         <mat-select formControlName="costOfSalesAcctId">
           <mat-option [value]="null">— Ninguna —</mat-option>
-          @for (a of costAccounts; track a.id) {
+          @for (a of costAccounts(); track a.id) {
             <mat-option [value]="a.id">{{ a.code }} — {{ a.name }}</mat-option>
           }
         </mat-select>
@@ -63,7 +63,7 @@
         <mat-label>Plantilla contable</mat-label>
         <mat-select formControlName="accountingTemplateId">
           <mat-option [value]="null">— Ninguna —</mat-option>
-          @for (tpl of templates; track tpl.id) {
+          @for (tpl of templates(); track tpl.id) {
             <mat-option [value]="tpl.id">{{ tpl.code }} — {{ tpl.name }}</mat-option>
           }
         </mat-select>

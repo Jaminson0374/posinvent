@@ -8,17 +8,14 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { By } from '@angular/platform-browser';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
+import Swal from 'sweetalert2';
 
 import { PresentationsTabComponent } from './presentations-tab';
 import { PresentationService } from '../../../core/services/presentation.service';
 import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.service';
 
-// Mock SweetAlert2
-vi.mock('sweetalert2', () => ({
-  default: {
-    fire: vi.fn().mockResolvedValue({ isConfirmed: false }),
-  },
-}));
+// Spy SweetAlert2
+vi.spyOn(Swal, 'fire').mockResolvedValue({ isConfirmed: false } as never);
 
 describe('PresentationsTabComponent — ReactiveForms', () => {
   let fixture: ComponentFixture<PresentationsTabComponent>;
@@ -65,14 +62,14 @@ describe('PresentationsTabComponent — ReactiveForms', () => {
     fixture = TestBed.createComponent(PresentationsTabComponent);
     component = fixture.componentInstance;
     // Set required inputs before change detection
-    component.productId = 'product-1';
-    component.formArray = fb.array<FormGroup>([]);
+    fixture.componentRef.setInput('productId', 'product-1');
+    fixture.componentRef.setInput('formArray', fb.array<FormGroup>([]));
   });
 
   // ── RED 1: Component accepts formArray input ─────────────────────
   it('should accept a formArray input from the parent', () => {
-    expect(component.formArray).toBeDefined();
-    expect(component.formArray.length).toBe(0);
+    expect(component.formArray()).toBeDefined();
+    expect(component.formArray().length).toBe(0);
   });
 
   // ── RED 2: Loaded presentations populate the FormArray ──────────
@@ -111,9 +108,9 @@ describe('PresentationsTabComponent — ReactiveForms', () => {
     presentationServiceMock.list.mockReturnValue(of(mockPresentations));
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(2);
+    expect(component.formArray().length).toBe(2);
 
-    const g1 = component.formArray.at(0);
+    const g1 = component.formArray().at(0);
     expect(g1.get('code')?.value).toBe('PRES-001');
     expect(g1.get('name')?.value).toBe('Caja x6');
     expect(g1.get('unitOfMeasureId')?.value).toBe('uom-1');
@@ -126,16 +123,16 @@ describe('PresentationsTabComponent — ReactiveForms', () => {
   it('should create a new FormGroup in formArray when adding a presentation', () => {
     fixture.detectChanges();
 
-    const initialLength = component.formArray.length;
+    const initialLength = component.formArray().length;
 
     const addBtn = fixture.debugElement.query(By.css('.sub-table-header .tb-btn'));
     expect(addBtn).toBeTruthy();
     (addBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(initialLength + 1);
+    expect(component.formArray().length).toBe(initialLength + 1);
 
-    const newGroup = component.formArray.at(component.formArray.length - 1);
+    const newGroup = component.formArray().at(component.formArray().length - 1);
     expect(newGroup.get('code')).toBeTruthy();
     expect(newGroup.get('name')).toBeTruthy();
     expect(newGroup.get('unitOfMeasureId')).toBeTruthy();
@@ -148,21 +145,21 @@ describe('PresentationsTabComponent — ReactiveForms', () => {
   it('should remove the temporary FormGroup when cancelling add', () => {
     fixture.detectChanges();
 
-    const initialLength = component.formArray.length;
+    const initialLength = component.formArray().length;
 
     const addBtn = fixture.debugElement.query(By.css('.sub-table-header .tb-btn'));
     expect(addBtn).toBeTruthy();
     (addBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(initialLength + 1);
+    expect(component.formArray().length).toBe(initialLength + 1);
 
     const cancelBtn = fixture.debugElement.query(By.css('button[matTooltip="Cancelar"]'));
     expect(cancelBtn).toBeTruthy();
     (cancelBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(component.formArray.length).toBe(initialLength);
+    expect(component.formArray().length).toBe(initialLength);
   });
 
   // ── RED 5: Editing a row propagates dirty state ─────────────────
@@ -187,19 +184,19 @@ describe('PresentationsTabComponent — ReactiveForms', () => {
     presentationServiceMock.list.mockReturnValue(of(mockPresentations));
     fixture.detectChanges();
 
-    expect(component.formArray.at(0).dirty).toBe(false);
+    expect(component.formArray().at(0).dirty).toBe(false);
 
     const editBtn = fixture.debugElement.query(By.css('button[matTooltip="Editar"]'));
     expect(editBtn).toBeTruthy();
     (editBtn.nativeElement as HTMLElement).click();
     fixture.detectChanges();
 
-    const row = component.formArray.at(0);
+    const row = component.formArray().at(0);
     row.get('code')?.setValue('NEW-CODE');
     row.get('code')?.markAsDirty();
     fixture.detectChanges();
 
-    expect(component.formArray.at(0).dirty).toBe(true);
+    expect(component.formArray().at(0).dirty).toBe(true);
   });
 
   // ── RED 6: Single-default "Predet." toggle rendered ─────────────

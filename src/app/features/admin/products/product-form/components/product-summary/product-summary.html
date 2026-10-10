@@ -32,7 +32,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">Código</span>
-        <span class="ps-row__value">{{ displayText(code) }}</span>
+        <span class="ps-row__value">{{ displayText(code()) }}</span>
       </div>
     </div>
 
@@ -43,7 +43,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">Nombre</span>
-        <span class="ps-row__value">{{ displayText(name) }}</span>
+        <span class="ps-row__value">{{ displayText(name()) }}</span>
       </div>
     </div>
 
@@ -54,7 +54,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">Categoría</span>
-        <span class="ps-row__value">{{ displayText(category) }}</span>
+        <span class="ps-row__value">{{ displayText(category()) }}</span>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">U. Medida</span>
-        <span class="ps-row__value">{{ displayText(uom) }}</span>
+        <span class="ps-row__value">{{ displayText(uom()) }}</span>
       </div>
     </div>
 
@@ -79,7 +79,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">Costo</span>
-        <span class="ps-row__value ps-row__value--mono">{{ formatCurrency(cost) }}</span>
+        <span class="ps-row__value ps-row__value--mono">{{ formatCurrency(cost()) }}</span>
       </div>
     </div>
 
@@ -90,7 +90,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">% Utilidad</span>
-        <span class="ps-row__value ps-row__value--mono">{{ formatPercent(margin) }}</span>
+        <span class="ps-row__value ps-row__value--mono">{{ formatPercent(margin()) }}</span>
       </div>
     </div>
 
@@ -101,7 +101,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">P. Venta</span>
-        <span class="ps-row__value ps-row__value--bold">{{ formatCurrency(salePrice) }}</span>
+        <span class="ps-row__value ps-row__value--bold">{{ formatCurrency(salePrice()) }}</span>
       </div>
     </div>
 
@@ -112,7 +112,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">Impuesto</span>
-        <span class="ps-row__value">{{ formatTax(tax) }}</span>
+        <span class="ps-row__value">{{ formatTax(tax()) }}</span>
       </div>
     </div>
 
@@ -123,7 +123,7 @@
       </div>
       <div class="ps-row__content">
         <span class="ps-row__label">Existencia</span>
-        <span class="ps-row__value ps-row__value--mono">{{ formatStock(stock) }}</span>
+        <span class="ps-row__value ps-row__value--mono">{{ formatStock(stock()) }}</span>
       </div>
     </div>
   </div>
