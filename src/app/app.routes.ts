@@ -542,10 +542,22 @@ export const routes: Routes = [
           },
           {
             path: 'lotes',
-            loadComponent: () =>
-              import('./features/inventario/batches/batch-list/batch-list').then(
-                (m) => m.BatchListComponent,
-              ),
+            children: [
+              {
+                path: '',
+                loadComponent: () =>
+                  import('./features/inventario/batches/batch-list/batch-list').then(
+                    (m) => m.BatchListComponent,
+                  ),
+              },
+              {
+                path: ':id',
+                loadComponent: () =>
+                  import('./features/inventario/batches/batch-detail/batch-detail').then(
+                    (m) => m.BatchDetailComponent,
+                  ),
+              },
+            ],
           },
           {
             path: 'stock',

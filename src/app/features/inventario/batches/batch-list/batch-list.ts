@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,6 +17,7 @@ import { BatchFormComponent } from '../batch-form/batch-form';
   selector: 'app-batch-list',
   standalone: true,
   imports: [
+    RouterLink,
     MatTableModule,
     MatButtonModule,
     MatIconModule,

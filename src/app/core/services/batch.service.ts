@@ -90,6 +90,10 @@ export class BatchService {
     return this.http.post<Batch>(this.base, request);
   }
 
+  getById(id: string): Observable<Batch> {
+    return this.http.get<Batch>(`${this.base}/${id}`);
+  }
+
   listChildren(parentId: string): Observable<Batch[]> {
     return this.http.get<Batch[]>(`${this.base}/${parentId}/children`);
   }
