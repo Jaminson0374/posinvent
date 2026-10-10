@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { WarehouseService } from '../../../../core/services/warehouse.service';
 import { WAREHOUSE_TYPE_LABELS } from '../../../../core/models/warehouse.model';
@@ -10,7 +11,14 @@ import { WAREHOUSE_TYPE_LABELS } from '../../../../core/models/warehouse.model';
 @Component({
   selector: 'app-warehouse-list',
   standalone: true,
-  imports: [RouterLink, MatCardModule, MatIconModule, MatChipsModule, MatProgressSpinnerModule],
+  imports: [
+    RouterLink,
+    MatCardModule,
+    MatIconModule,
+    MatChipsModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './warehouse-list.html',
   styleUrl: './warehouse-list.css',
 })

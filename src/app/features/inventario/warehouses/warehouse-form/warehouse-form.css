@@ -1,0 +1,36 @@
+.wf-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.wf-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1.5rem;
+}
+
+.wf-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.wf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wf-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.wf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

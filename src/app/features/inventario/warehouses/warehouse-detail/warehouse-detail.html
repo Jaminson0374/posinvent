@@ -4,6 +4,16 @@
     <a mat-button routerLink="/inventario/bodegas" class="wd-back-btn">
       <mat-icon>arrow_back</mat-icon> Volver a Bodegas
     </a>
+
+    @if (warehouse(); as wh) {
+      <button
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/inventario/bodegas', wh.id, 'editar']"
+      >
+        <mat-icon>edit</mat-icon> Editar
+      </button>
+    }
   </div>
 
   @if (warehouse(); as wh) {

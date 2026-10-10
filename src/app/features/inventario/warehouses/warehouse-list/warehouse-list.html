@@ -1,4 +1,10 @@
-<h2 class="section-title">Bodegas</h2>
+<div class="wl-header">
+  <h2 class="section-title">Bodegas</h2>
+  <button mat-flat-button color="primary" routerLink="nuevo">
+    <mat-icon>add</mat-icon>
+    Nueva bodega
+  </button>
+</div>
 
 @if (service.warehouses.isLoading()) {
   <div class="spinner-container">

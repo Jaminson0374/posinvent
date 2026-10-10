@@ -23,8 +23,25 @@ export class WarehouseService {
     return this.http.get<Warehouse[]>(`${this.base}/search?${params.toString()}`);
   }
 
+  getById(id: string): Observable<Warehouse> {
+    return this.http.get<Warehouse>(`${this.base}/${id}`);
+  }
+
   create(name: string, warehouseType: WarehouseType, location?: string): Observable<Warehouse> {
     return this.http.post<Warehouse>(this.base, {
+      name,
+      warehouseType,
+      location: location?.trim() ? location.trim() : null,
+    });
+  }
+
+  update(
+    id: string,
+    name: string,
+    warehouseType: WarehouseType,
+    location?: string,
+  ): Observable<Warehouse> {
+    return this.http.put<Warehouse>(`${this.base}/${id}`, {
       name,
       warehouseType,
       location: location?.trim() ? location.trim() : null,
