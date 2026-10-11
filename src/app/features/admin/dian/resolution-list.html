@@ -60,7 +60,16 @@
               >
                 <mat-icon class="text-blue-600">edit</mat-icon>
               </a>
-              @if (!r.active) {
+              @if (r.active) {
+                <button
+                  mat-icon-button
+                  class="deactivate-btn"
+                  (click)="deactivate(r.id)"
+                  matTooltip="Desactivar"
+                >
+                  <mat-icon class="text-amber-600">block</mat-icon>
+                </button>
+              } @else {
                 <button mat-icon-button (click)="activate(r.id)" matTooltip="Activar">
                   <mat-icon class="text-green-600">check_circle</mat-icon>
                 </button>

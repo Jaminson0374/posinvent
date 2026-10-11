@@ -34,6 +34,10 @@ export class DianService {
     return this.http.post<DianResolution>(`/api/v1/admin/dian-resolutions/${id}/activate`, {});
   }
 
+  deactivateResolution(id: string): Observable<DianResolution> {
+    return this.http.post<DianResolution>(`/api/v1/admin/dian-resolutions/${id}/deactivate`, {});
+  }
+
   deleteResolution(id: string): Observable<void> {
     return this.http.delete<void>(`/api/v1/admin/dian-resolutions/${id}`);
   }

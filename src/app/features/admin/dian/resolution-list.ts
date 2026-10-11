@@ -74,4 +74,16 @@ export class ResolutionListComponent {
       },
     });
   }
+
+  deactivate(id: string): void {
+    this.dianService.deactivateResolution(id).subscribe({
+      next: () => {
+        this.resolutions.reload();
+        Swal.fire('Desactivada', 'Resolución desactivada correctamente.', 'success');
+      },
+      error: (err) => {
+        Swal.fire('Error', err?.error?.message ?? 'Error al desactivar', 'error');
+      },
+    });
+  }
 }
