@@ -60,6 +60,8 @@
       <input matInput formControlName="softwarePin" />
     </mat-form-field>
 
+    <mat-checkbox formControlName="active">Activa</mat-checkbox>
+
     <div class="flex items-center gap-4">
       <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
         @if (saving()) {
