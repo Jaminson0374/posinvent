@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { MatCheckbox } from '@angular/material/checkbox';
 import { By } from '@angular/platform-browser';
 import { of, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -91,17 +92,19 @@ describe('ResolutionFormComponent', () => {
   it('muestra el checkbox activa y lo vincula al control', async () => {
     const { fixture, component } = await setup();
 
-    const checkbox = fixture.debugElement.query(By.css('input[formControlName="active"]'));
-    expect(checkbox).toBeTruthy();
-    expect((checkbox.nativeElement as HTMLInputElement).type).toBe('checkbox');
+    const checkboxDebug = fixture.debugElement.query(
+      By.css('mat-checkbox[formControlName="active"]'),
+    );
+    expect(checkboxDebug).toBeTruthy();
+    const checkbox = checkboxDebug.componentInstance as MatCheckbox;
 
     component.form.get('active')!.setValue(true);
     fixture.detectChanges();
-    expect((checkbox.nativeElement as HTMLInputElement).checked).toBe(true);
+    expect(checkbox.checked).toBe(true);
 
     component.form.get('active')!.setValue(false);
     fixture.detectChanges();
-    expect((checkbox.nativeElement as HTMLInputElement).checked).toBe(false);
+    expect(checkbox.checked).toBe(false);
   });
 
   it('carga la resolución y activa el modo edición con :id', async () => {

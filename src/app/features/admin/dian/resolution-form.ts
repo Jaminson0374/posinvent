@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { DianService } from '../../../core/services/dian.service';
 import Swal from 'sweetalert2';
 
@@ -24,6 +25,7 @@ import Swal from 'sweetalert2';
     MatDatepickerModule,
     MatNativeDateModule,
     MatProgressSpinnerModule,
+    MatCheckboxModule,
   ],
   templateUrl: './resolution-form.html',
   styleUrl: './resolution-form.css',
