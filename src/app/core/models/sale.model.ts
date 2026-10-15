@@ -77,6 +77,7 @@ export interface SaleItemRequest {
   quantity: number;
   unitPrice: number;
   taxType: string;
+  batchId?: string | null;
 }
 
 export interface TransitionRequest {
