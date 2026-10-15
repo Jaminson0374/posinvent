@@ -95,6 +95,16 @@
           }
         </mat-select>
       </mat-form-field>
+
+      <!-- Warehouse -->
+      <app-warehouse-picker
+        label="Bodega"
+        (selected)="onWarehouseSelected($event)"
+        (cleared)="onWarehouseCleared()"
+      />
+      @if (form.controls.warehouseId.invalid && form.controls.warehouseId.touched) {
+        <div class="qf-error-bar">Seleccioná una bodega.</div>
+      }
     </div>
 
     <!-- Lines section -->
@@ -146,6 +156,17 @@
             <mat-select formControlName="taxType">
               @for (opt of taxTypeOptions; track opt.value) {
                 <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Batch (FEFO default, operator override) -->
+          <mat-form-field appearance="outline" class="qf-line-batch" style="flex: 1.4">
+            <mat-label>Lote</mat-label>
+            <mat-select formControlName="batchId">
+              <mat-option value="">— Sin lote —</mat-option>
+              @for (batch of batchOptionsFor(line); track batch.batchId) {
+                <mat-option [value]="batch.batchId">{{ batchLabel(batch) }}</mat-option>
               }
             </mat-select>
           </mat-form-field>

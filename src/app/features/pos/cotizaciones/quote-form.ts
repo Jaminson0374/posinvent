@@ -1,4 +1,13 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  OnInit,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import {
   FormArray,
@@ -10,7 +19,7 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResourceRef } from '@angular/common/http';
 import { debounceTime, distinctUntilChanged, filter, firstValueFrom } from 'rxjs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -28,6 +37,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SaleService } from '../../../core/services/sale.service';
 import { ProductService } from '../../../core/services/product.service';
+import { AvailableBatch, StockService } from '../../../core/services/stock.service';
+import { WarehouseService } from '../../../core/services/warehouse.service';
+import { WarehousePickerComponent } from '../../shared/warehouse-picker';
 import { ThirdParty } from '../../../core/models/third-party.model';
 import { Product } from '../../../core/models/product.model';
 import {
@@ -47,7 +59,14 @@ type LineForm = FormGroup<{
   quantity: FormControl<number>;
   unitPrice: FormControl<number>;
   taxType: FormControl<string>;
+  batchId: FormControl<string>;
 }>;
+
+interface LineBatchResource {
+  productId: string;
+  warehouseId: string;
+  ref: HttpResourceRef<AvailableBatch[] | undefined>;
+}
 
 @Component({
   selector: 'app-quote-form',
@@ -66,6 +85,7 @@ type LineForm = FormGroup<{
     MatDividerModule,
     MatChipsModule,
     MatDialogModule,
+    WarehousePickerComponent,
   ],
   templateUrl: './quote-form.html',
   styleUrl: './quote-form.css',
@@ -74,11 +94,15 @@ export class QuoteFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly saleService = inject(SaleService);
   readonly productService = inject(ProductService);
+  readonly stockService = inject(StockService);
+  private readonly warehouseService = inject(WarehouseService);
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
+
+  readonly warehousePicker = viewChild(WarehousePickerComponent);
 
   readonly saving = signal(false);
   readonly loading = signal(false);
@@ -90,6 +114,12 @@ export class QuoteFormComponent implements OnInit {
   readonly clientDisplay = new FormControl('', { nonNullable: true });
   readonly clientOptions = signal<ThirdParty[]>([]);
   readonly clientLoading = signal(false);
+
+  // Per-line available batches (keyed by the line form group). The signal is what the template reads,
+  // so options stay reactive when a line is added, a product changes, or the warehouse changes.
+  readonly batchOptionsByLine = signal<ReadonlyMap<LineForm, AvailableBatch[]>>(new Map());
+  private readonly batchResources = new Map<LineForm, LineBatchResource>();
+  private readonly batchRefresh = signal(0);
 
   readonly products = computed(() => this.productService.products.value()?.content ?? []);
 
@@ -118,10 +148,92 @@ export class QuoteFormComponent implements OnInit {
   readonly form = this.fb.nonNullable.group({
     clientId: ['', Validators.required],
     type: ['QUOTE', Validators.required],
+    warehouseId: ['', Validators.required],
     linesArray: this.fb.array<LineForm>([]),
   });
 
   readonly linesArray = this.form.controls.linesArray;
+
+  constructor() {
+    // Load the available batches for every line whose product and warehouse are set, then apply the
+    // FEFO default. `batchRefresh` is bumped by the form handlers because FormControl values are not signals.
+    effect(() => {
+      this.batchRefresh();
+      const warehouseId = this.form.controls.warehouseId.value;
+      const next = new Map<LineForm, AvailableBatch[]>();
+
+      for (const line of this.linesArray.controls) {
+        const productId = line.controls.productId.value;
+
+        if (!productId || !warehouseId) {
+          next.set(line, []);
+          this.applyFefoDefault(line, []);
+          continue;
+        }
+
+        const ref = this.resolveBatchResource(line, productId, warehouseId);
+        if (!ref.hasValue()) {
+          // Options are still loading: keep the current batch until we know which ones are valid.
+          next.set(line, []);
+          continue;
+        }
+
+        const options = ref.value() ?? [];
+        next.set(line, options);
+        this.applyFefoDefault(line, options);
+      }
+
+      this.batchOptionsByLine.set(next);
+    });
+  }
+
+  private resolveBatchResource(
+    line: LineForm,
+    productId: string,
+    warehouseId: string,
+  ): HttpResourceRef<AvailableBatch[] | undefined> {
+    const cached = this.batchResources.get(line);
+    if (cached && cached.productId === productId && cached.warehouseId === warehouseId) {
+      return cached.ref;
+    }
+
+    cached?.ref.destroy();
+    const ref = this.stockService.availableBatches(productId, warehouseId);
+    this.batchResources.set(line, { productId, warehouseId, ref });
+    return ref;
+  }
+
+  // Selects the FEFO batch (first option) unless the operator already picked a batch that is still valid.
+  private applyFefoDefault(line: LineForm, options: AvailableBatch[]): void {
+    const current = line.controls.batchId.value;
+    const stillValid = !!current && options.some((option) => option.batchId === current);
+    if (stillValid) return;
+
+    const next = options.length > 0 ? options[0].batchId : '';
+    if (current !== next) {
+      line.controls.batchId.setValue(next, { emitEvent: false });
+    }
+  }
+
+  applyBatchOptions(index: number, options: AvailableBatch[]): void {
+    const line = this.linesArray.at(index);
+    this.batchOptionsByLine.update((map) => new Map(map).set(line, options));
+    this.applyFefoDefault(line, options);
+  }
+
+  batchOptionsFor(line: LineForm): AvailableBatch[] {
+    return this.batchOptionsByLine().get(line) ?? [];
+  }
+
+  batchLabel(batch: AvailableBatch): string {
+    const shortId = batch.batchId.slice(0, 8);
+    const expiration = batch.expirationDate ? `vence ${batch.expirationDate}` : 'sin vencimiento';
+    return `Lote ${shortId} — ${expiration} — disp. ${batch.availableQuantity}`;
+  }
+
+  private refreshBatches(): void {
+    this.batchRefresh.update((tick) => tick + 1);
+  }
 
   readonly subtotal = computed(() =>
     this.linesArray.controls.reduce(
@@ -198,8 +310,11 @@ export class QuoteFormComponent implements OnInit {
   }
 
   private resetForm(): void {
-    this.form.reset({ type: 'QUOTE', clientId: '' });
+    this.form.reset({ type: 'QUOTE', clientId: '', warehouseId: '' });
     this.clientDisplay.setValue('');
+    this.warehousePicker()?.clearDisplayValue();
+    this.batchResources.clear();
+    this.batchOptionsByLine.set(new Map());
     this.linesArray.clear();
     this.addLine();
   }
@@ -213,14 +328,18 @@ export class QuoteFormComponent implements OnInit {
         this.form.patchValue({
           clientId: doc.clientId,
           type: doc.type,
+          warehouseId: doc.warehouseId ?? '',
         });
         this.syncClientDisplay();
+        this.syncWarehouseDisplay(doc.warehouseId);
 
+        this.batchResources.clear();
         this.linesArray.clear();
         (doc.items ?? []).forEach((item) => this.linesArray.push(this.createLineGroup(item)));
         if (this.linesArray.length === 0) {
           this.addLine();
         }
+        this.refreshBatches();
       },
       error: () => {
         this.loading.set(false);
@@ -235,6 +354,7 @@ export class QuoteFormComponent implements OnInit {
       quantity: number;
       unitPrice: number;
       taxType: string;
+      batchId: string | null;
     }>,
   ): LineForm {
     return this.fb.nonNullable.group({
@@ -243,7 +363,18 @@ export class QuoteFormComponent implements OnInit {
       quantity: [existing?.quantity ?? 1, [Validators.required, Validators.min(0.001)]],
       unitPrice: [existing?.unitPrice ?? 0, [Validators.required, Validators.min(0)]],
       taxType: [existing?.taxType ?? 'IVA0', Validators.required],
+      batchId: [existing?.batchId ?? ''],
     }) as unknown as LineForm;
+  }
+
+  private syncWarehouseDisplay(warehouseId: string | null | undefined): void {
+    if (!warehouseId) return;
+    this.warehouseService.getById(warehouseId).subscribe({
+      next: (warehouse) => {
+        if (!warehouse) return;
+        this.warehousePicker()?.searchControl.setValue(warehouse.name, { emitEvent: false });
+      },
+    });
   }
 
   private getProductName(productId: string | undefined): string {
@@ -326,21 +457,45 @@ export class QuoteFormComponent implements OnInit {
 
   addLine(): void {
     this.linesArray.push(this.createLineGroup());
+    this.refreshBatches();
   }
 
   removeLine(index: number): void {
     if (this.linesArray.length <= 1) return;
+
+    const line = this.linesArray.at(index);
+    this.batchResources.get(line)?.ref.destroy();
+    this.batchResources.delete(line);
+    this.batchOptionsByLine.update((map) => {
+      const next = new Map(map);
+      next.delete(line);
+      return next;
+    });
+
     this.linesArray.removeAt(index);
+    this.refreshBatches();
   }
 
   onLineProductSelected(index: number, ev: MatAutocompleteSelectedEvent): void {
     const line = this.linesArray.at(index);
     const product = this.products().find((p) => p.id === ev.option.value);
     line.controls.productId.setValue(ev.option.value);
+    line.controls.batchId.setValue('', { emitEvent: false });
     line.controls.productDisplay.setValue(
       product ? `${product.productCode} — ${product.name}` : ev.option.viewValue,
     );
     this.productSearchQuery.set('');
+    this.refreshBatches();
+  }
+
+  onWarehouseSelected(id: string): void {
+    this.form.controls.warehouseId.setValue(id);
+    this.refreshBatches();
+  }
+
+  onWarehouseCleared(): void {
+    this.form.controls.warehouseId.setValue('');
+    this.refreshBatches();
   }
 
   syncLineProductDisplay(index: number): void {
@@ -375,11 +530,20 @@ export class QuoteFormComponent implements OnInit {
       return;
     }
 
+    const missingBatch = this.linesArray.controls.some(
+      (line) => line.controls.productId.value && !line.controls.batchId.value,
+    );
+    if (missingBatch) {
+      this.error.set('Cada producto debe tener un lote seleccionado.');
+      this.linesArray.controls.forEach((c) => c.markAllAsTouched());
+      return;
+    }
+
     const raw = this.form.getRawValue();
     const request: SalesDocumentRequest = {
       type: raw.type as SalesDocumentType,
       clientId: raw.clientId,
-      warehouseId: '',
+      warehouseId: raw.warehouseId,
     };
 
     this.saving.set(true);
@@ -420,6 +584,7 @@ export class QuoteFormComponent implements OnInit {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         taxType: item.taxType,
+        batchId: item.batchId || null,
       };
 
       await firstValueFrom(this.saleService.addItem(documentId, request));
