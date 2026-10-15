@@ -31,11 +31,24 @@ export interface CashCountRequest {
   notes?: string;
 }
 
+export interface CashCountLine {
+  denominationValue: number;
+  denominationType: 'BILL' | 'COIN';
+  quantity: number;
+}
+
+export interface RegisterCashCountRequest {
+  lines: CashCountLine[];
+  notes?: string | null;
+}
+
 export interface CashCountResponse {
+  id: string;
+  shiftId: string;
   expectedTotal: number;
-  actualTotal: number;
+  countedTotal: number;
   difference: number;
-  invoiceCount: number;
+  createdAt: string;
 }
 
 export type { PageResponse };

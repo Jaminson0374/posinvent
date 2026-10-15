@@ -1,14 +1,21 @@
-import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
+import { Injectable, inject, signal, PLATFORM_ID, Injector } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, httpResource } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PageResponse } from '../models/page.model';
-import { Shift, ShiftRequest, CashCountRequest } from '../models/shift.model';
+import {
+  Shift,
+  ShiftRequest,
+  CashCountRequest,
+  CashCountResponse,
+  RegisterCashCountRequest,
+} from '../models/shift.model';
 
 @Injectable({ providedIn: 'root' })
 export class ShiftService {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly injector = inject(Injector);
   private readonly base = '/api/v1/shifts';
 
   readonly page = signal(0);
@@ -63,6 +70,24 @@ export class ShiftService {
   getZReport(id: string): Observable<string> {
     return this.http.get(`${this.base}/${id}/z-report`, { responseType: 'text' });
   }
+
+  saveCashCount(
+    shiftId: string,
+    request: RegisterCashCountRequest,
+  ): Observable<CashCountResponse> {
+    return this.http.post<CashCountResponse>(`${this.base}/${shiftId}/cash-counts`, request);
+  }
+
+  // Cash-count history for a shift, newest first. The injector is passed explicitly so this
+  // factory can be called outside an injection context (e.g. after an async shift load).
+  readonly cashCounts = (shiftId: string) =>
+    httpResource<CashCountResponse[]>(
+      () =>
+        isPlatformBrowser(this.platformId) && shiftId
+          ? `${this.base}/${shiftId}/cash-counts`
+          : undefined,
+      { injector: this.injector },
+    );
 
   reload(): void {
     this.shifts.reload();

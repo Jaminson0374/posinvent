@@ -105,12 +105,35 @@
               }
             </div>
 
+            <mat-form-field appearance="outline" class="full-width notes-field">
+              <mat-label>Notas</mat-label>
+              <textarea
+                matInput
+                rows="2"
+                [formControl]="notesControl"
+                placeholder="Observaciones opcionales..."
+              ></textarea>
+            </mat-form-field>
+
             <div class="denom-actions">
               <button mat-stroked-button (click)="resetCounts()">
                 <mat-icon>restart_alt</mat-icon> Limpiar
               </button>
-              <button mat-stroked-button (click)="fillExample()" [disabled]="expectedCash() <= 0">
+              <button mat-stroked-button (click)="fillExample()" [disabled]="expectedTotal() <= 0">
                 <mat-icon>auto_fix_high</mat-icon> Auto-repartir
+              </button>
+              <button
+                mat-flat-button
+                color="primary"
+                (click)="saveCount()"
+                [disabled]="!canSave()"
+              >
+                @if (saving()) {
+                  <mat-spinner diameter="20" />
+                } @else {
+                  <mat-icon>save</mat-icon>
+                }
+                Guardar arqueo
               </button>
             </div>
           </mat-card-content>
@@ -135,7 +158,7 @@
 
               <span class="sum-label">Esperado en caja</span>
               <span class="sum-value">{{
-                expectedCash() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+                expectedTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
               }}</span>
 
               <mat-divider />
@@ -163,7 +186,54 @@
           </mat-card-content>
         </mat-card>
 
-        <!-- Denominations table -->
+        <!-- Last saved count result -->
+      @if (countResult(); as result) {
+        <mat-card class="result-card">
+          <mat-card-header>
+            <mat-card-title>Último arqueo guardado</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="summary-grid">
+              <span class="sum-label">Esperado</span>
+              <span class="sum-value">{{
+                result.expectedTotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+              }}</span>
+
+              <mat-divider />
+              <mat-divider />
+
+              <span class="sum-label">Contado</span>
+              <span class="sum-value sum-counted">{{
+                result.countedTotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+              }}</span>
+
+              <mat-divider />
+              <mat-divider />
+
+              <span class="sum-label">Diferencia</span>
+              @if (result.difference === 0) {
+                <span class="sum-value sum-even">$0 — Cuadre exacto</span>
+              } @else if (result.difference > 0) {
+                <span class="sum-value sum-over">
+                  +{{
+                    result.difference | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+                  }}
+                  (sobrante)
+                </span>
+              } @else {
+                <span class="sum-value sum-under">
+                  {{
+                    result.difference | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+                  }}
+                  (faltante)
+                </span>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <!-- Denominations table -->
         <mat-card>
           <mat-card-header>
             <mat-card-title>Desglose</mat-card-title>
@@ -188,6 +258,36 @@
               }
               @if (totalCounted() === 0) {
                 <p class="bt-empty">Ingresá cantidades para ver el desglose.</p>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Cash-count history for the active shift -->
+        <mat-card>
+          <mat-card-header>
+            <mat-card-title>Historial de arqueos</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="breakdown-table">
+              <div class="bt-header">
+                <span>Fecha</span>
+                <span>Contado</span>
+                <span>Diferencia</span>
+              </div>
+              @for (entry of history(); track entry.id) {
+                <div class="bt-row">
+                  <span>{{ entry.createdAt | date: 'short' }}</span>
+                  <span>{{
+                    entry.countedTotal | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+                  }}</span>
+                  <span>{{
+                    entry.difference | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+                  }}</span>
+                </div>
+              }
+              @if (history().length === 0) {
+                <p class="bt-empty">Sin arqueos guardados para este turno.</p>
               }
             </div>
           </mat-card-content>
