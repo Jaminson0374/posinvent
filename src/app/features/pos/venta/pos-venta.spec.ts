@@ -7,12 +7,13 @@ import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { Product } from '../../../core/models/product.model';
 import { ProductCatalogCategory, UnitOfMeasure } from '../../../core/models/product-catalog.model';
 import { SCALE_STATUS, ScaleReading, ScaleStatus } from '../../../core/models/scale.model';
+import { ElectronicInvoice } from '../../../core/models/dian.model';
 import { ScaleService } from '../../../core/services/scale.service';
 import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.service';
 import { ProductCatalogCategoryService } from '../../../core/services/product-catalog-category.service';
@@ -292,5 +293,147 @@ describe('PosVentaComponent — weight capture', () => {
     component.captureWeightForLine(0);
 
     expect(component.orderLines()[0].quantity).toBe(3);
+  });
+});
+
+describe('PosVentaComponent — DIAN status polling', () => {
+  let fixture: ComponentFixture<PosVentaComponent>;
+  let component: PosVentaComponent;
+  let posService: {
+    searchProducts: ReturnType<typeof vi.fn>;
+    getDianStatus: ReturnType<typeof vi.fn>;
+  };
+
+  function makeInvoice(partial: Partial<ElectronicInvoice>): ElectronicInvoice {
+    return {
+      id: 'ei-1',
+      salesDocumentId: 'sd-1',
+      sourceDocumentId: null,
+      cufe: 'CUFE-DEFAULT',
+      qrCode: 'qr-base64',
+      status: 'PENDING_SEND',
+      sentAt: '2026-01-01T00:00:00Z',
+      responseAt: null,
+      createdAt: '2026-01-01T00:00:00Z',
+      ...partial,
+    };
+  }
+
+  beforeEach(async () => {
+    posService = {
+      searchProducts: vi.fn(() =>
+        of({ content: [], totalElements: 0, totalPages: 0, page: 0, size: 0, last: true }),
+      ),
+      getDianStatus: vi.fn(() => of(makeInvoice({}))),
+    };
+
+    const scaleService = {
+      currentReading: signal<ScaleReading | null>(null),
+      status: signal<ScaleStatus>(SCALE_STATUS.CONNECTED),
+      errorMessage: signal<string | null>(null),
+      connect: vi.fn(async () => undefined),
+      disconnect: vi.fn(async () => undefined),
+      startPolling: vi.fn(),
+      stopPolling: vi.fn(),
+    };
+    const unitService = {
+      units: { value: () => [KG_UNIT, UND_UNIT] as UnitOfMeasure[] },
+    };
+    const categoryService = {
+      categories: { value: () => [] as ProductCatalogCategory[] },
+      reload: vi.fn(),
+    };
+    const warehouseService = { listAll: () => of([]) };
+    const cashRegisterService = { listActive: () => of([]) };
+
+    await TestBed.configureTestingModule({
+      imports: [PosVentaComponent, NoopAnimationsModule],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ScaleService, useValue: scaleService },
+        { provide: UnitOfMeasureService, useValue: unitService },
+        { provide: ProductCatalogCategoryService, useValue: categoryService },
+        { provide: WarehouseService, useValue: warehouseService },
+        { provide: CashRegisterService, useValue: cashRegisterService },
+        { provide: PosService, useValue: posService },
+        { provide: SaleService, useValue: {} },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(PosVentaComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+    vi.useRealTimers();
+    TestBed.resetTestingModule();
+  });
+
+  it('requests the DIAN status with the invoiceId after a successful checkout', () => {
+    vi.useFakeTimers();
+
+    component.onCheckoutSuccess({
+      invoiceId: 'sd-42',
+      documentNumber: 'FV-42',
+      totalAmount: 10000,
+      changeAmount: 0,
+    });
+
+    expect(posService.getDianStatus).toHaveBeenCalledWith('sd-42');
+    expect(component.lastDocumentNumber()).toBe('FV-42');
+    expect(component.dianChecking()).toBe(true);
+  });
+
+  it('tolerates a 404 while the electronic invoice row does not exist yet', async () => {
+    vi.useFakeTimers();
+    posService.getDianStatus
+      .mockReturnValueOnce(throwError(() => ({ status: 404 })))
+      .mockReturnValue(of(makeInvoice({ cufe: 'CUFE-9' })));
+
+    component.startDianStatusPolling('sd-1');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(posService.getDianStatus).toHaveBeenCalledTimes(1);
+    expect(component.dianChecking()).toBe(true);
+    expect(component.dianError()).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(posService.getDianStatus).toHaveBeenCalledTimes(2);
+    expect(component.dianStatus()).toBe('PENDING_SEND');
+    expect(component.dianChecking()).toBe(true);
+  });
+
+  it('stops polling once the status is terminal', async () => {
+    vi.useFakeTimers();
+    posService.getDianStatus.mockReturnValue(
+      of(makeInvoice({ status: 'ACCEPTED_BY_DIAN', cufe: 'CUFE-TERMINAL' })),
+    );
+
+    component.startDianStatusPolling('sd-1');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(component.dianStatus()).toBe('ACCEPTED_BY_DIAN');
+    expect(component.dianChecking()).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(9000);
+
+    expect(posService.getDianStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes the CUFE and QR code to the panel', async () => {
+    vi.useFakeTimers();
+    posService.getDianStatus.mockReturnValue(
+      of(makeInvoice({ cufe: 'CUFE-PANEL', qrCode: 'qr-panel' })),
+    );
+
+    component.startDianStatusPolling('sd-1');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(component.dianCufe()).toBe('CUFE-PANEL');
+    expect(component.dianQrCode()).toBe('qr-panel');
   });
 });

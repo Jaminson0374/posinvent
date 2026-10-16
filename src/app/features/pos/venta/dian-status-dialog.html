@@ -1,0 +1,50 @@
+<h2 mat-dialog-title class="dsd-title">
+  <mat-icon>receipt_long</mat-icon> Factura electrónica DIAN
+</h2>
+
+<mat-dialog-content class="dsd-content">
+  <div class="dsd-row">
+    <span class="dsd-label">Factura</span>
+    <span class="dsd-value">{{ data.documentNumber() ?? '—' }}</span>
+  </div>
+
+  <div class="dsd-row">
+    <span class="dsd-label">Estado</span>
+    @let inv = data.invoice();
+    @if (inv) {
+      <span class="dsd-chip" [class]="chipClass(inv.status)">{{ statusLabel(inv.status) }}</span>
+    } @else if (data.checking()) {
+      <span class="dsd-chip dsd-chip-pending">
+        <mat-spinner diameter="14" class="dsd-mini-spinner" /> Enviando a la DIAN…
+      </span>
+    } @else {
+      <span class="dsd-value muted">Sin información</span>
+    }
+  </div>
+
+  @if (data.invoice()?.cufe; as cufe) {
+    <div class="dsd-cufe">
+      <span class="dsd-label">CUFE</span>
+      <code class="dsd-cufe-value">{{ cufe }}</code>
+    </div>
+  }
+
+  <div class="dsd-qr">
+    @if (data.invoice()?.qrCode; as qr) {
+      <img [src]="'data:image/png;base64,' + qr" alt="Código QR DIAN" />
+    } @else {
+      <div class="dsd-qr-empty">
+        <mat-icon>qr_code</mat-icon>
+        <span>{{
+          data.checking()
+            ? 'El código QR estará disponible cuando la DIAN responda.'
+            : 'Sin código QR disponible.'
+        }}</span>
+      </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cerrar</button>
+</mat-dialog-actions>

@@ -682,3 +682,120 @@
   border-top: 1px solid var(--mat-sys-outline-variant);
   color: var(--mat-sys-primary) !important;
 }
+
+/* ── DIAN status panel ── */
+.dian-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid #f0f0f0;
+  background: #f8fafc;
+}
+
+.dian-panel.terminal {
+  background: #f0fdf4;
+}
+
+.dian-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dian-panel-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #1565c0;
+}
+
+.dian-panel-title {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dian-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dian-mini-spinner {
+  display: inline-block;
+}
+
+.chip-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.chip-sent {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.chip-accepted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.chip-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.dian-cufe-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dian-cufe {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  color: #475569;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.dian-copy-btn {
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px;
+  padding: 0;
+  color: #1565c0;
+  flex-shrink: 0;
+}
+
+.dian-copy-btn .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.dian-error {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.dian-view-btn {
+  align-self: flex-start;
+}

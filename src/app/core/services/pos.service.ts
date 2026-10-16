@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { PageResponse } from '../models/page.model';
 import { Product } from '../models/product.model';
 import { SalesDocument } from '../models/sale.model';
+import { ElectronicInvoice } from '../models/dian.model';
 
 export interface PaymentLine {
   method: string;
@@ -49,6 +50,10 @@ export class PosService {
 
   checkout(request: CheckoutRequest): Observable<CheckoutResponse> {
     return this.http.post<CheckoutResponse>(`${this.base}/checkout`, request);
+  }
+
+  getDianStatus(salesDocumentId: string): Observable<ElectronicInvoice> {
+    return this.http.get<ElectronicInvoice>(`${this.base}/invoices/${salesDocumentId}/dian`);
   }
 
   searchProducts(query: string): Observable<PageResponse<Product>> {
