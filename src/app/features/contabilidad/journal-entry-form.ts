@@ -1,5 +1,7 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, computed, inject, output, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,12 +12,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { JournalEntryService } from '../../core/services/journal-entry.service';
+import { PucAccountService } from '../../core/services/puc-account.service';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-journal-entry-form',
   standalone: true,
   imports: [
+    DecimalPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatIconModule,
@@ -44,12 +48,27 @@ import Swal from 'sweetalert2';
             <mat-label>Descripción</mat-label>
             <textarea matInput formControlName="description" rows="2"></textarea>
           </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Justificación</mat-label>
+            <textarea
+              matInput
+              formControlName="justification"
+              rows="2"
+              maxlength="500"
+              placeholder="Motivo del asiento manual (obligatorio)"
+            ></textarea>
+            <mat-hint align="end">{{ 500 - form.controls.justification.value.length }}</mat-hint>
+          </mat-form-field>
           <h4 class="text-sm font-semibold">Líneas del asiento</h4>
           @for (line of lines.controls; track i; let i = $index) {
             <div class="flex gap-2 items-start" [formGroup]="lineGroup(i)">
               <mat-form-field appearance="outline" class="flex-1">
-                <mat-label>Cuenta ID</mat-label>
-                <input matInput formControlName="accountId" placeholder="UUID de la cuenta PUC" />
+                <mat-label>Cuenta PUC</mat-label>
+                <mat-select formControlName="accountId" placeholder="Seleccione una cuenta">
+                  @for (acc of postableAccounts(); track acc.id) {
+                    <mat-option [value]="acc.id">{{ acc.code }} — {{ acc.name }}</mat-option>
+                  }
+                </mat-select>
               </mat-form-field>
               <mat-form-field appearance="outline" class="w-28">
                 <mat-label>Débito</mat-label>
@@ -73,6 +92,22 @@ import Swal from 'sweetalert2';
           <button mat-stroked-button type="button" (click)="addLine()">
             <mat-icon>add</mat-icon> Agregar línea
           </button>
+          <div
+            class="je-totals"
+            [class.je-balance-ok]="isBalanced()"
+            [class.je-balance-bad]="!isBalanced()"
+          >
+            <span
+              >Débitos: <strong>{{ totalDebit() | number: '1.2-2' }}</strong></span
+            >
+            <span
+              >Créditos: <strong>{{ totalCredit() | number: '1.2-2' }}</strong></span
+            >
+            <span class="je-balance-flag">
+              <mat-icon>{{ isBalanced() ? 'check_circle' : 'error' }}</mat-icon>
+              {{ isBalanced() ? 'Cuadrado' : 'Descuadrado' }}
+            </span>
+          </div>
         </form>
       </mat-card-content>
       <mat-card-actions align="end">
@@ -103,21 +138,49 @@ import Swal from 'sweetalert2';
     '.w-28{width:7rem}',
     '.text-sm{font-size:.875rem}',
     '.font-semibold{font-weight:600}',
+    '.je-totals{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:flex-end;padding:.5rem .75rem;border-radius:8px;font-size:.875rem}',
+    '.je-balance-ok{background:#dcfce7;color:#15803d}',
+    '.je-balance-bad{background:#fee2e2;color:#dc2626}',
+    '.je-balance-flag{display:inline-flex;align-items:center;gap:.25rem;font-weight:600}',
+    '.je-balance-flag mat-icon{font-size:1rem;width:1rem;height:1rem}',
   ],
 })
 export class JournalEntryFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(JournalEntryService);
+  private readonly pucService = inject(PucAccountService);
   readonly cancel = output<void>();
   readonly saved = output<void>();
   readonly saving = signal(false);
 
+  /** Postable PUC accounts (only those that allow direct transactions). */
+  readonly postableAccounts = computed(() =>
+    (this.pucService.accounts.value() ?? []).filter((a) => a.allowsTransactions),
+  );
+
   readonly form = this.fb.nonNullable.group({
     entryDate: [new Date(), Validators.required],
     description: [''],
+    justification: ['', [Validators.required, Validators.maxLength(500)]],
   });
 
   readonly lines = this.fb.nonNullable.array([this.createLineGroup(), this.createLineGroup()]);
+
+  private readonly linesValue = toSignal(this.lines.valueChanges, {
+    initialValue: this.lines.getRawValue(),
+  });
+
+  readonly totalDebit = computed(() =>
+    this.linesValue().reduce((sum, l) => sum + (Number(l.debit) || 0), 0),
+  );
+
+  readonly totalCredit = computed(() =>
+    this.linesValue().reduce((sum, l) => sum + (Number(l.credit) || 0), 0),
+  );
+
+  readonly isBalanced = computed(
+    () => this.totalDebit() > 0 && Math.abs(this.totalDebit() - this.totalCredit()) < 0.005,
+  );
 
   private createLineGroup() {
     return this.fb.nonNullable.group({
@@ -145,13 +208,28 @@ export class JournalEntryFormComponent {
       return;
     }
     const v = this.form.getRawValue();
+    const rawLines = this.lines.getRawValue();
+    const totalDebit = rawLines.reduce((sum, l) => sum + (Number(l.debit) || 0), 0);
+    const totalCredit = rawLines.reduce((sum, l) => sum + (Number(l.credit) || 0), 0);
+
+    if (totalDebit <= 0 || Math.abs(totalDebit - totalCredit) >= 0.005) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Asiento descuadrado',
+        text: 'La suma de débitos debe ser igual a la suma de créditos (y mayor que cero).',
+        confirmButtonColor: '#ef4444',
+      });
+      return;
+    }
+
     const body = {
       entryDate: v.entryDate.toISOString().split('T')[0],
       description: v.description,
-      lines: this.lines.getRawValue().map((l) => ({
+      justification: v.justification,
+      lines: rawLines.map((l) => ({
         accountId: l.accountId,
-        debit: l.debit,
-        credit: l.credit,
+        debit: Number(l.debit) || 0,
+        credit: Number(l.credit) || 0,
       })),
     };
 

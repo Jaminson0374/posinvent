@@ -21,6 +21,7 @@ export class JournalEntryService {
   create(req: {
     entryDate: string;
     description?: string;
+    justification: string;
     lines: { accountId: string; debit: number; credit: number; description?: string }[];
   }): Observable<JournalEntry> {
     return this.http.post<JournalEntry>(this.base, req);

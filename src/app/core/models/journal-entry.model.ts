@@ -13,6 +13,7 @@ export interface JournalEntry {
   description: string | null;
   sourceType: string;
   sourceId: string | null;
+  justification: string | null;
   createdAt: string;
   lines: JournalEntryLine[];
 }
