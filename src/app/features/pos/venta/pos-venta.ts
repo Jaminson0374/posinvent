@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -23,13 +23,31 @@ import {
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { debounceTime, distinctUntilChanged, filter } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  interval,
+  of,
+  startWith,
+  Subscription,
+  switchMap,
+  take,
+  takeWhile,
+} from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Product } from '../../../core/models/product.model';
 import { ThirdParty } from '../../../core/models/third-party.model';
 import { UnitOfMeasure } from '../../../core/models/product-catalog.model';
 import { SCALE_STATUS, isWeightUomCode, toKilograms } from '../../../core/models/scale.model';
-import { PosService } from '../../../core/services/pos.service';
+import {
+  STATUS_LABELS,
+  ELECTRONIC_INVOICE_STATUS,
+  type ElectronicInvoice,
+  type ElectronicInvoiceStatus,
+} from '../../../core/models/dian.model';
+import { PosService, CheckoutResponse } from '../../../core/services/pos.service';
 import { SaleService } from '../../../core/services/sale.service';
 import { ScaleService } from '../../../core/services/scale.service';
 import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.service';
@@ -41,6 +59,7 @@ import { CashRegister } from '../../../core/models/cash-register.model';
 import { PageResponse } from '../../../core/models/page.model';
 import { QuickCreateClientDialogComponent } from '../../admin/third-parties/dialogs/quick-create-client.dialog';
 import { ScaleConfigDialogComponent } from './scale-config-dialog';
+import { DianStatusDialogComponent, DianStatusDialogData } from './dian-status-dialog';
 import Swal from 'sweetalert2';
 
 interface OrderLine {
@@ -182,6 +201,45 @@ export class PosVentaComponent {
     if (catId === null) return [];
     if (catId === '') return prods;
     return prods.filter((p) => p.categoryId === catId);
+  });
+
+  // ── DIAN electronic invoice status (after checkout) ──
+  private static readonly DIAN_POLL_INTERVAL_MS = 3000;
+  private static readonly DIAN_MAX_ATTEMPTS = 20;
+
+  readonly lastInvoiceId = signal<string | null>(null);
+  readonly lastDocumentNumber = signal<string | null>(null);
+  readonly dianInvoice = signal<ElectronicInvoice | null>(null);
+  readonly dianChecking = signal(false);
+  readonly dianError = signal<string | null>(null);
+
+  private dianPollSub: Subscription | null = null;
+
+  readonly dianStatus = computed<ElectronicInvoiceStatus | null>(
+    () => this.dianInvoice()?.status ?? null,
+  );
+  readonly dianCufe = computed(() => this.dianInvoice()?.cufe ?? null);
+  readonly dianQrCode = computed(() => this.dianInvoice()?.qrCode ?? null);
+  readonly dianTerminal = computed(() => {
+    const status = this.dianStatus();
+    return status !== null && this.isTerminalStatus(status);
+  });
+  readonly dianStatusLabel = computed(() => {
+    const status = this.dianStatus();
+    if (status) return STATUS_LABELS[status] ?? status;
+    return this.dianChecking() ? 'Enviando a la DIAN…' : 'Sin información';
+  });
+  readonly dianChipClass = computed(() => {
+    switch (this.dianStatus()) {
+      case ELECTRONIC_INVOICE_STATUS.SENT:
+        return 'chip-sent';
+      case ELECTRONIC_INVOICE_STATUS.ACCEPTED_BY_DIAN:
+        return 'chip-accepted';
+      case ELECTRONIC_INVOICE_STATUS.REJECTED_BY_DIAN:
+        return 'chip-rejected';
+      default:
+        return 'chip-pending';
+    }
   });
 
   constructor() {
@@ -748,6 +806,93 @@ export class PosVentaComponent {
     }
   }
 
+  // ── DIAN status polling ──
+
+  /** Handles a successful checkout: records the invoice and starts DIAN polling. */
+  onCheckoutSuccess(result: CheckoutResponse): void {
+    this.lastDocumentNumber.set(result.documentNumber);
+    this.startDianStatusPolling(result.invoiceId);
+  }
+
+  /**
+   * Polls the DIAN electronic-invoice status until it becomes terminal or the
+   * attempt budget runs out. The row is created asynchronously after checkout,
+   * so 404 responses are tolerated and keep the poll running.
+   */
+  startDianStatusPolling(salesDocumentId: string): void {
+    this.dianPollSub?.unsubscribe();
+    this.lastInvoiceId.set(salesDocumentId);
+    this.dianInvoice.set(null);
+    this.dianError.set(null);
+    this.dianChecking.set(true);
+
+    this.dianPollSub = interval(PosVentaComponent.DIAN_POLL_INTERVAL_MS)
+      .pipe(
+        startWith(-1),
+        take(PosVentaComponent.DIAN_MAX_ATTEMPTS),
+        switchMap(() =>
+          this.posService.getDianStatus(salesDocumentId).pipe(
+            catchError((err: unknown) => {
+              if ((err as HttpErrorResponse)?.status !== 404) {
+                this.dianError.set('No se pudo consultar el estado en la DIAN.');
+              }
+              return of(null);
+            }),
+          ),
+        ),
+        takeWhile((invoice) => invoice === null || !this.isTerminalStatus(invoice.status), true),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (invoice) => {
+          if (invoice) {
+            this.dianInvoice.set(invoice);
+            if (!this.isTerminalStatus(invoice.status)) this.dianError.set(null);
+          }
+        },
+        complete: () => this.dianChecking.set(false),
+      });
+  }
+
+  private isTerminalStatus(status: ElectronicInvoiceStatus): boolean {
+    return (
+      status === ELECTRONIC_INVOICE_STATUS.ACCEPTED_BY_DIAN ||
+      status === ELECTRONIC_INVOICE_STATUS.REJECTED_BY_DIAN
+    );
+  }
+
+  async copyCufe(): Promise<void> {
+    const cufe = this.dianCufe();
+    if (!cufe) return;
+    const clipboard = navigator?.clipboard;
+    if (!clipboard?.writeText) {
+      await Swal.fire('No se pudo copiar', `CUFE: ${cufe}`, 'info');
+      return;
+    }
+    try {
+      await clipboard.writeText(cufe);
+      await Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'CUFE copiado',
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch {
+      await Swal.fire('No se pudo copiar', 'Copiá el CUFE manualmente.', 'info');
+    }
+  }
+
+  openDianDialog(): void {
+    const data: DianStatusDialogData = {
+      invoice: this.dianInvoice.asReadonly(),
+      documentNumber: this.lastDocumentNumber.asReadonly(),
+      checking: this.dianChecking.asReadonly(),
+    };
+    this.dialog.open(DianStatusDialogComponent, { width: '420px', data });
+  }
+
   // ── COBRAR ──
 
   async cobrar(): Promise<void> {
@@ -849,7 +994,10 @@ export class PosVentaComponent {
         })
         .toPromise()!;
 
-      // 5. Success
+      // 5. Track the DIAN electronic-invoice status (created asynchronously).
+      this.onCheckoutSuccess(result!);
+
+      // 6. Success
       const totalStr = this.formatCurrency(this.grandTotal());
       const changeStr = this.formatCurrency(paymentResult.change);
       const changeHtml =

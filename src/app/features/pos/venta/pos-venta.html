@@ -235,6 +235,43 @@
         <mat-icon>payments</mat-icon> COBRAR
       </button>
     </div>
+
+    <!-- DIAN electronic invoice status (after checkout) -->
+    @if (lastInvoiceId()) {
+      <div class="dian-panel" [class.terminal]="dianTerminal()">
+        <div class="dian-panel-header">
+          <mat-icon class="dian-panel-icon">receipt_long</mat-icon>
+          <span class="dian-panel-title">Factura DIAN — {{ lastDocumentNumber() ?? '' }}</span>
+          <span class="dian-chip" [class]="dianChipClass()">
+            @if (dianChecking() && !dianStatus()) {
+              <mat-spinner diameter="14" class="dian-mini-spinner" />
+            }
+            {{ dianStatusLabel() }}
+          </span>
+        </div>
+
+        @if (dianCufe(); as cufe) {
+          <div class="dian-cufe-row">
+            <span class="dian-cufe" [matTooltip]="cufe">{{ cufe }}</span>
+            <button
+              mat-icon-button
+              class="dian-copy-btn"
+              (click)="copyCufe()"
+              aria-label="Copiar CUFE"
+              matTooltip="Copiar CUFE"
+            >
+              <mat-icon>content_copy</mat-icon>
+            </button>
+          </div>
+        } @else if (dianError(); as error) {
+          <span class="dian-error">{{ error }}</span>
+        }
+
+        <button mat-stroked-button class="dian-view-btn" (click)="openDianDialog()">
+          <mat-icon>qr_code</mat-icon> Ver factura
+        </button>
+      </div>
+    }
   </section>
 
   <!-- ZONE 4: BOTTOM BAR -->
