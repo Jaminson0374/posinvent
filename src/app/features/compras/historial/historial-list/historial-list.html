@@ -68,45 +68,43 @@
 @if (data(); as historyData) {
   <div class="table-wrapper">
     <mat-table [dataSource]="historyData.content" class="w-full">
-      <ng-container matColumnDef="ocId">
-        <mat-header-cell *matHeaderCellDef>OC</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{ row.ocId?.slice(0, 8) ?? '—' }}</mat-cell>
+      <ng-container matColumnDef="eventType">
+        <mat-header-cell *matHeaderCellDef>Tipo</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.eventType || '—' }}</mat-cell>
       </ng-container>
 
-      <ng-container matColumnDef="supplier">
+      <ng-container matColumnDef="documentId">
+        <mat-header-cell *matHeaderCellDef>Documento</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.documentId?.slice(0, 8) ?? '—' }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="supplierName">
         <mat-header-cell *matHeaderCellDef>Proveedor</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{ row.supplier }}</mat-cell>
+        <mat-cell *matCellDef="let row">{{ row.supplierName || '—' }}</mat-cell>
       </ng-container>
 
-      <ng-container matColumnDef="orderDate">
-        <mat-header-cell *matHeaderCellDef>Fecha OC</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{ row.orderDate | date: 'dd/MM/yyyy' }}</mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="receiptDate">
-        <mat-header-cell *matHeaderCellDef>Fecha recepción</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{
-          row.receiptDate ? (row.receiptDate | date: 'dd/MM/yyyy') : '—'
-        }}</mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="invoiceNumber">
-        <mat-header-cell *matHeaderCellDef>Factura</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{ row.invoiceNumber || '—' }}</mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="total">
-        <mat-header-cell *matHeaderCellDef>Total</mat-header-cell>
-        <mat-cell *matCellDef="let row">{{ row.total | currency: 'COP' }}</mat-cell>
+      <ng-container matColumnDef="description">
+        <mat-header-cell *matHeaderCellDef>Descripción</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.description || '—' }}</mat-cell>
       </ng-container>
 
       <ng-container matColumnDef="status">
         <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
         <mat-cell *matCellDef="let row">
-          <mat-chip [class]="'chip-' + row.status?.toLowerCase()">{{
-            row.status || row.entryType
-          }}</mat-chip>
+          <mat-chip [class]="'chip-' + row.status?.toLowerCase()">{{ row.status || '—' }}</mat-chip>
         </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="amount">
+        <mat-header-cell *matHeaderCellDef>Monto</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{
+          row.amount != null ? (row.amount | currency: 'COP') : '—'
+        }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="eventTimestamp">
+        <mat-header-cell *matHeaderCellDef>Fecha</mat-header-cell>
+        <mat-cell *matCellDef="let row">{{ row.eventTimestamp | date: 'dd/MM/yyyy HH:mm' }}</mat-cell>
       </ng-container>
 
       <mat-header-row *matHeaderRowDef="displayedColumns" />

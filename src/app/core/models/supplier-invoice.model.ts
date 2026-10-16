@@ -25,7 +25,9 @@ export interface SupplierInvoiceRequest {
   dueDate: string;
   subtotal: number;
   ivaTotal: number;
-  retentionTotal: number;
+  // Optional manual override. When null the backend computes the retention data-driven from the
+  // active PurchaseRetentionConfig catalog (retefuente) plus the company-level ICA rate.
+  retentionTotal: number | null;
   total: number;
   ocIds?: string[];
   notes?: string | null;
