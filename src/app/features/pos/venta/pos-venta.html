@@ -170,6 +170,40 @@
           </mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="discount">
+          <mat-header-cell *matHeaderCellDef class="col-discount">Descuento</mat-header-cell>
+          <mat-cell *matCellDef="let line; let i = index" class="col-discount">
+            <div class="line-discount">
+              <select
+                class="line-discount-type"
+                [value]="line.discountType"
+                (change)="setLineDiscountType(i, $any($event.target).value)"
+                aria-label="Tipo de descuento"
+              >
+                <option value="NONE">—</option>
+                <option value="PCT">%</option>
+                <option value="AMOUNT">$</option>
+              </select>
+              @if (line.discountType !== 'NONE') {
+                <input
+                  class="line-discount-value"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  [value]="line.discountValue"
+                  (input)="setLineDiscountValue(i, $any($event.target).value)"
+                  aria-label="Valor del descuento"
+                />
+              }
+              @if (line.lineDiscount > 0) {
+                <span class="line-discount-amount">
+                  -{{ line.lineDiscount | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}
+                </span>
+              }
+            </div>
+          </mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="actions">
           <mat-header-cell *matHeaderCellDef class="col-actions"></mat-header-cell>
           <mat-cell *matCellDef="let line; let i = index" class="col-actions">
@@ -191,12 +225,73 @@
     <!-- Totals -->
     <div class="order-totals">
       @let tax = taxTotals();
+
       <div class="totals-line">
         <span>Subtotal</span>
         <span class="totals-subtotal">{{
-          subtotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
+          grossSubtotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO'
         }}</span>
       </div>
+
+      @if (lineDiscountTotal() > 0) {
+        <div class="totals-line totals-discount">
+          <span>Descuento líneas</span>
+          <span>-{{ lineDiscountTotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</span>
+        </div>
+      }
+
+      <!-- Document discount: type + value + reason -->
+      <div class="document-discount">
+        <label class="doc-discount-label" for="docDiscountType">Descuento doc.</label>
+        <select
+          id="docDiscountType"
+          class="doc-discount-type"
+          [value]="documentDiscountType()"
+          (change)="setDocumentDiscountType($any($event.target).value)"
+        >
+          <option value="NONE">Sin descuento</option>
+          <option value="PCT">Porcentaje (%)</option>
+          <option value="AMOUNT">Monto ($)</option>
+        </select>
+        @if (documentDiscountType() !== 'NONE') {
+          <input
+            class="doc-discount-value"
+            type="number"
+            min="0"
+            step="0.01"
+            [value]="documentDiscountValue()"
+            (input)="setDocumentDiscountValue($any($event.target).value)"
+            aria-label="Valor del descuento de documento"
+          />
+        }
+      </div>
+
+      @if (documentDiscountAmount() > 0) {
+        <div class="totals-line totals-discount">
+          <span>Descuento documento</span>
+          <span>-{{ documentDiscountAmount() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</span>
+        </div>
+      }
+
+      @if (documentDiscountType() !== 'NONE') {
+        <div class="document-discount-reason">
+          <input
+            class="doc-discount-reason"
+            type="text"
+            maxlength="200"
+            placeholder="Motivo del descuento"
+            [value]="discountReason()"
+            (input)="setDiscountReason($any($event.target).value)"
+            aria-label="Motivo del descuento"
+          />
+        </div>
+      }
+
+      <div class="totals-line">
+        <span>Neto</span>
+        <span>{{ subtotal() | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</span>
+      </div>
+
       @if (tax.tax0 > 0) {
         <div class="totals-line">
           <span>IVA 0%</span>

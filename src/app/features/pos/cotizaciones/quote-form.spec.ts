@@ -178,4 +178,40 @@ describe('QuoteFormComponent', () => {
 
     expect(saleService.createDocument).not.toHaveBeenCalled();
   });
+
+  it('sends the per-line discount on save', async () => {
+    saleService.createDocument.mockReturnValue(of({ id: 'doc-1' }));
+    saleService.addItem.mockReturnValue(of({ id: 'doc-1' }));
+
+    component.form.controls.clientId.setValue('client-1');
+    component.form.controls.warehouseId.setValue('wh-1');
+
+    const line = component.linesArray.at(0);
+    line.controls.productId.setValue('prod-1');
+    line.controls.batchId.setValue('batch-1');
+    line.controls.quantity.setValue(1);
+    line.controls.unitPrice.setValue(1000);
+    line.controls.discountType.setValue('PCT');
+    line.controls.discountValue.setValue(10);
+
+    await component.save();
+
+    expect(saleService.addItem).toHaveBeenCalledWith(
+      'doc-1',
+      expect.objectContaining({ discountType: 'PCT', discountValue: 10 }),
+    );
+  });
+
+  it('computes the net and IVA on the discounted base', () => {
+    const line = component.linesArray.at(0);
+    line.controls.quantity.setValue(1);
+    line.controls.unitPrice.setValue(1000);
+    line.controls.taxType.setValue('IVA19');
+    line.controls.discountType.setValue('AMOUNT');
+    line.controls.discountValue.setValue(100);
+
+    expect(component.subtotal()).toBe(900);
+    expect(component.taxTotals().tax19).toBe(171);
+    expect(component.grandTotal()).toBe(1071);
+  });
 });

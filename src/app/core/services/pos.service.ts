@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { PageResponse } from '../models/page.model';
 import { Product } from '../models/product.model';
 import { SalesDocument } from '../models/sale.model';
+import { DiscountType } from '../domain/discount';
 
 export interface PaymentLine {
   method: string;
@@ -15,6 +16,10 @@ export interface CheckoutRequest {
   orderId: string;
   cashRegisterId: string;
   payments: PaymentLine[];
+  documentDiscountType?: DiscountType;
+  documentDiscountValue?: number;
+  discountReason?: string | null;
+  discountAuthorizationId?: string | null;
 }
 
 export interface CheckoutResponse {
@@ -22,6 +27,19 @@ export interface CheckoutResponse {
   documentNumber: string;
   totalAmount: number;
   changeAmount: number;
+}
+
+/** Administrator credentials used to authorize a discount; never persisted. */
+export interface DiscountAuthorizationRequest {
+  username: string;
+  password: string;
+  cashRegisterId: string;
+}
+
+export interface DiscountAuthorizationResponse {
+  authorizationId: string;
+  expiresAt: string;
+  authorizedBy: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +67,16 @@ export class PosService {
 
   checkout(request: CheckoutRequest): Observable<CheckoutResponse> {
     return this.http.post<CheckoutResponse>(`${this.base}/checkout`, request);
+  }
+
+  /** Issues a single-use discount authorization token from admin credentials. */
+  authorizeDiscount(
+    request: DiscountAuthorizationRequest,
+  ): Observable<DiscountAuthorizationResponse> {
+    return this.http.post<DiscountAuthorizationResponse>(
+      `${this.base}/discount-authorizations`,
+      request,
+    );
   }
 
   searchProducts(query: string): Observable<PageResponse<Product>> {
