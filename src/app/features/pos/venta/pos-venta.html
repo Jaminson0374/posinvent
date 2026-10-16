@@ -116,25 +116,43 @@
         <ng-container matColumnDef="qty">
           <mat-header-cell *matHeaderCellDef class="col-qty">Cant</mat-header-cell>
           <mat-cell *matCellDef="let line; let i = index" class="col-qty">
-            <div class="qty-controls">
-              <button
-                mat-icon-button
-                class="qty-btn dec"
-                (click)="decrementLine(i)"
-                aria-label="Restar"
-              >
-                <mat-icon>remove</mat-icon>
-              </button>
-              <span class="qty-value">{{ line.quantity }}</span>
-              <button
-                mat-icon-button
-                class="qty-btn inc"
-                (click)="incrementLine(i)"
-                aria-label="Sumar"
-              >
-                <mat-icon>add</mat-icon>
-              </button>
-            </div>
+            @if (line.isWeight) {
+              <div class="qty-controls qty-weight">
+                <span class="qty-value" [class.qty-pending]="line.quantity <= 0">
+                  {{ line.quantity > 0 ? (line.quantity | number: '1.0-3') : '—' }}
+                </span>
+                <button
+                  mat-icon-button
+                  class="qty-btn weigh"
+                  (click)="captureWeightForLine(i)"
+                  [disabled]="!canCapture()"
+                  aria-label="Capturar peso"
+                  matTooltip="Capturar peso de la báscula"
+                >
+                  <mat-icon>scale</mat-icon>
+                </button>
+              </div>
+            } @else {
+              <div class="qty-controls">
+                <button
+                  mat-icon-button
+                  class="qty-btn dec"
+                  (click)="decrementLine(i)"
+                  aria-label="Restar"
+                >
+                  <mat-icon>remove</mat-icon>
+                </button>
+                <span class="qty-value">{{ line.quantity }}</span>
+                <button
+                  mat-icon-button
+                  class="qty-btn inc"
+                  (click)="incrementLine(i)"
+                  aria-label="Sumar"
+                >
+                  <mat-icon>add</mat-icon>
+                </button>
+              </div>
+            }
           </mat-cell>
         </ng-container>
 
@@ -162,7 +180,11 @@
         </ng-container>
 
         <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true" />
-        <mat-row *matRowDef="let row; columns: displayedColumns" />
+        <mat-row
+          *matRowDef="let row; columns: displayedColumns; let i = index"
+          [class.selected-line]="selectedLineIndex() === i"
+          (click)="selectLine(i)"
+        />
       </mat-table>
     </div>
 
@@ -261,10 +283,49 @@
 
     <!-- Right column: Functional buttons -->
     <div class="bottom-right">
+      <div
+        class="scale-indicator"
+        [class.connected]="isScaleConnected()"
+        [class.error]="scaleStatus() === 'ERROR'"
+      >
+        <mat-icon class="scale-status-icon">{{
+          isScaleConnected() ? 'sensors' : 'sensors_off'
+        }}</mat-icon>
+        <div class="scale-indicator-text">
+          <span class="scale-status">{{ scaleStatusLabel() }}</span>
+          @if (scaleError(); as err) {
+            <span class="scale-error" [matTooltip]="err">{{ err }}</span>
+          } @else if (scaleReading(); as reading) {
+            <span class="scale-weight" [class.unstable]="!reading.stable">
+              {{ reading.weight | number: '1.0-3' }} {{ reading.unit }}
+              @if (!reading.stable) {
+                <em>(inestable)</em>
+              }
+            </span>
+          } @else {
+            <span class="scale-weight muted">Sin lectura</span>
+          }
+        </div>
+        <button
+          mat-icon-button
+          class="scale-config-btn"
+          (click)="openScaleConfig()"
+          aria-label="Configurar báscula"
+          matTooltip="Configurar báscula"
+        >
+          <mat-icon>settings</mat-icon>
+        </button>
+      </div>
+
       <button mat-stroked-button class="func-btn" (click)="cotizar()">
         <mat-icon>request_quote</mat-icon> Cotizar
       </button>
-      <button class="scale-btn" [class.scale-active]="isScaleActive()" (click)="toggleScale()">
+      <button
+        class="scale-btn"
+        [class.scale-active]="isScaleActive()"
+        (click)="toggleScale()"
+        matTooltip="Conectar / desconectar báscula"
+      >
         <mat-icon>scale</mat-icon>
         <span>Pesar</span>
       </button>

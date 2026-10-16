@@ -1,0 +1,59 @@
+.scd-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.scd-title .mat-icon {
+  color: var(--mat-sys-primary, #1565c0);
+}
+
+.scd-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 380px;
+  padding-top: 8px !important;
+}
+
+.scd-field {
+  width: 100%;
+}
+
+/* Connection test result banner */
+.scd-test-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.scd-test-result .mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.scd-test-result.ok {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.scd-test-result.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.scd-actions {
+  gap: 8px;
+}
+
+.scd-spinner {
+  display: inline-block;
+  margin-right: 6px;
+}
