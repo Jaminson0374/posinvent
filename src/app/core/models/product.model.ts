@@ -1,4 +1,4 @@
-export type TaxType = 'EXENTO' | 'IVA_5' | 'IVA_8' | 'IVA_19';
+export type TaxType = 'EXENTO' | 'IVA_5' | 'IVA_19';
 export type CostingMethod =
   | 'PEPS'
   | 'PROMEDIO_PONDERADO'

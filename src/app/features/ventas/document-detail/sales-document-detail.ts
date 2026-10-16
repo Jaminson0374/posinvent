@@ -91,9 +91,7 @@ export class SalesDocumentDetailComponent implements OnInit {
   readonly totalIVA = computed(() => {
     const doc = this.document();
     if (!doc) return 0;
-    return (
-      (doc.totalTax0 || 0) + (doc.totalTax5 || 0) + (doc.totalTax8 || 0) + (doc.totalTax19 || 0)
-    );
+    return (doc.totalTax0 || 0) + (doc.totalTax5 || 0) + (doc.totalTax19 || 0);
   });
 
   readonly availableTransitions = computed(() => {

@@ -68,11 +68,9 @@ export class ProductSummaryComponent {
       ? 'Exento'
       : value === 'IVA_5'
         ? 'IVA 5%'
-        : value === 'IVA_8'
-          ? 'IVA 8%'
-          : value === 'IVA_19'
-            ? 'IVA 19%'
-            : value;
+        : value === 'IVA_19'
+          ? 'IVA 19%'
+          : value;
   }
 
   /** Format stock as integer. */

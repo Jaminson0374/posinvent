@@ -244,7 +244,6 @@ export class QuoteFormComponent implements OnInit {
   readonly taxTotals = computed(() => {
     let tax0 = 0;
     let tax5 = 0;
-    let tax8 = 0;
     let tax19 = 0;
 
     for (const line of this.linesArray.controls) {
@@ -257,11 +256,10 @@ export class QuoteFormComponent implements OnInit {
 
       if (rate === 0) tax0 += tax;
       else if (rate === 0.05) tax5 += tax;
-      else if (rate === 0.08) tax8 += tax;
       else tax19 += tax;
     }
 
-    return { tax0, tax5, tax8, tax19, totalTax: tax0 + tax5 + tax8 + tax19 };
+    return { tax0, tax5, tax19, totalTax: tax0 + tax5 + tax19 };
   });
 
   readonly grandTotal = computed(() => this.subtotal() + this.taxTotals().totalTax);
@@ -513,8 +511,6 @@ export class QuoteFormComponent implements OnInit {
     switch (taxType) {
       case 'IVA5':
         return 0.05;
-      case 'IVA8':
-        return 0.08;
       case 'IVA19':
         return 0.19;
       default:

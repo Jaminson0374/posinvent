@@ -288,8 +288,6 @@ export class ProductListComponent implements OnInit {
     switch (type) {
       case 'IVA_5':
         return 'IVA 5%';
-      case 'IVA_8':
-        return 'IVA 8%';
       case 'IVA_19':
         return 'IVA 19%';
       default:
