@@ -573,7 +573,6 @@ export class ProductFormComponent implements OnInit {
   readonly taxOptions = [
     { value: 'EXENTO', label: 'Exento' },
     { value: 'IVA_5', label: 'IVA 5%' },
-    { value: 'IVA_8', label: 'IVA 8%' },
     { value: 'IVA_19', label: 'IVA 19%' },
   ];
 

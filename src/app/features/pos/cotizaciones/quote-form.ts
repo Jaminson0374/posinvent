@@ -141,7 +141,6 @@ export class QuoteFormComponent implements OnInit {
   readonly taxTypeOptions: ReadonlyArray<{ value: string; label: string }> = [
     { value: 'IVA0', label: 'IVA 0%' },
     { value: 'IVA5', label: 'IVA 5%' },
-    { value: 'IVA8', label: 'IVA 8%' },
     { value: 'IVA19', label: 'IVA 19%' },
   ];
 
