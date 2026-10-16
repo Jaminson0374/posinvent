@@ -50,7 +50,6 @@ const mockInvoice: SalesDocument = {
   totalNet: 120000,
   totalTax0: 120000,
   totalTax5: 0,
-  totalTax8: 0,
   totalTax19: 0,
   totalAmount: 120000,
   createdBy: 'user-1',

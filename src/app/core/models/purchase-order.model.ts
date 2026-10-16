@@ -1,18 +1,16 @@
 export type PurchaseOrderStatus = 'PENDING' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED';
 
-export type TaxType = 'EXENTO' | 'IVA_5' | 'IVA_8' | 'IVA_19';
+export type TaxType = 'EXENTO' | 'IVA_5' | 'IVA_19';
 
 export const TAX_RATES: Record<TaxType, number> = {
   EXENTO: 0,
   IVA_5: 5,
-  IVA_8: 8,
   IVA_19: 19,
 };
 
 export const TAX_LABELS: Record<TaxType, string> = {
   EXENTO: 'Exento',
   IVA_5: 'IVA 5%',
-  IVA_8: 'IVA 8%',
   IVA_19: 'IVA 19%',
 };
 

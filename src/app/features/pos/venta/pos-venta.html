@@ -209,12 +209,6 @@
           <span>{{ tax.tax5 | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</span>
         </div>
       }
-      @if (tax.tax8 > 0) {
-        <div class="totals-line">
-          <span>IVA 8%</span>
-          <span>{{ tax.tax8 | currency: 'COP' : 'symbol-narrow' : '1.0-0' : 'es-CO' }}</span>
-        </div>
-      }
       @if (tax.tax19 > 0) {
         <div class="totals-line">
           <span>IVA 19%</span>

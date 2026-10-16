@@ -37,7 +37,6 @@ export interface SalesDocument {
   totalNet: number;
   totalTax0: number;
   totalTax5: number;
-  totalTax8: number;
   totalTax19: number;
   totalAmount: number;
   createdBy: string;

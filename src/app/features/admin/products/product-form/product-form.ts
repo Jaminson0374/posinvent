@@ -427,11 +427,9 @@ export class ProductFormComponent implements OnInit {
       ? 'Exento'
       : taxType === 'IVA_5'
         ? 'IVA 5%'
-        : taxType === 'IVA_8'
-          ? 'IVA 8%'
-          : taxType === 'IVA_19'
-            ? 'IVA 19%'
-            : taxType;
+        : taxType === 'IVA_19'
+          ? 'IVA 19%'
+          : taxType;
   }
 
   // ── Draft persistence ────────────────────────────────────────────
@@ -962,7 +960,7 @@ export class ProductFormComponent implements OnInit {
   }
 
   private getTaxRate(taxType: string | null | undefined): number {
-    return taxType === 'IVA_5' ? 5 : taxType === 'IVA_8' ? 8 : taxType === 'IVA_19' ? 19 : 0;
+    return taxType === 'IVA_5' ? 5 : taxType === 'IVA_19' ? 19 : 0;
   }
 
   private markPriceEntriesChanged(): void {

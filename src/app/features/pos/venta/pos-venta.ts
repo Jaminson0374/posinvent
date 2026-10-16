@@ -156,7 +156,6 @@ export class PosVentaComponent {
     const lines = this.orderLines();
     let tax0 = 0;
     let tax5 = 0;
-    let tax8 = 0;
     let tax19 = 0;
 
     for (const line of lines) {
@@ -164,11 +163,10 @@ export class PosVentaComponent {
       const tax = line.subtotal * rate;
       if (rate === 0) tax0 += tax;
       else if (rate === 0.05) tax5 += tax;
-      else if (rate === 0.08) tax8 += tax;
       else tax19 += tax;
     }
 
-    return { tax0, tax5, tax8, tax19, totalTax: tax0 + tax5 + tax8 + tax19 };
+    return { tax0, tax5, tax19, totalTax: tax0 + tax5 + tax19 };
   });
 
   readonly grandTotal = computed(() => this.subtotal() + this.taxTotals().totalTax);
@@ -323,8 +321,6 @@ export class PosVentaComponent {
     switch (taxType) {
       case 'IVA_5':
         return 0.05;
-      case 'IVA_8':
-        return 0.08;
       case 'IVA_19':
         return 0.19;
       default:
@@ -345,8 +341,6 @@ export class PosVentaComponent {
     switch (taxType) {
       case 'IVA_5':
         return '5%';
-      case 'IVA_8':
-        return '8%';
       case 'IVA_19':
         return '19%';
       default:
