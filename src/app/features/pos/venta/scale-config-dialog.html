@@ -1,0 +1,41 @@
+<h2 mat-dialog-title class="scd-title"><mat-icon>scale</mat-icon> Configurar báscula</h2>
+
+<mat-dialog-content class="scd-content">
+  <mat-form-field appearance="outline" class="scd-field">
+    <mat-label>Velocidad (baudRate)</mat-label>
+    <input matInput type="number" min="300" step="1" [formControl]="baudRateControl" />
+    <mat-hint>Valor típico: 9600. Consultá el manual de tu báscula.</mat-hint>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="scd-field">
+    <mat-label>Expresión de parseo (regex)</mat-label>
+    <input matInput [formControl]="patternControl" spellcheck="false" />
+    <mat-hint>Grupo 1 = peso, Grupo 2 = unidad. Ej: trama "ST,GS,+ 1.234 kg".</mat-hint>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="scd-field">
+    <mat-label>Token de estabilidad</mat-label>
+    <input matInput [formControl]="stableTokenControl" spellcheck="false" />
+    <mat-hint>Si la trama contiene este texto, la lectura se marca como estable.</mat-hint>
+  </mat-form-field>
+
+  @if (testMessage(); as message) {
+    <div class="scd-test-result" [class.ok]="testOk()" [class.error]="!testOk()">
+      <mat-icon>{{ testOk() ? 'check_circle' : 'error' }}</mat-icon>
+      <span>{{ message }}</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="scd-actions">
+  <button mat-stroked-button type="button" (click)="testConnection()" [disabled]="testing()">
+    @if (testing()) {
+      <mat-spinner diameter="18" class="scd-spinner" />
+    } @else {
+      <mat-icon>cable</mat-icon>
+    }
+    Probar conexión
+  </button>
+  <button mat-button type="button" (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" (click)="save()">Guardar</button>
+</mat-dialog-actions>

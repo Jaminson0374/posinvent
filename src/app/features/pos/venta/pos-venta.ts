@@ -6,7 +6,7 @@ import {
   ChangeDetectionStrategy,
   DestroyRef,
 } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,9 +27,12 @@ import { debounceTime, distinctUntilChanged, filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Product } from '../../../core/models/product.model';
 import { ThirdParty } from '../../../core/models/third-party.model';
+import { UnitOfMeasure } from '../../../core/models/product-catalog.model';
+import { SCALE_STATUS, isWeightUomCode, toKilograms } from '../../../core/models/scale.model';
 import { PosService } from '../../../core/services/pos.service';
 import { SaleService } from '../../../core/services/sale.service';
-import { MockScaleService } from '../../../core/services/mock-scale.service';
+import { ScaleService } from '../../../core/services/scale.service';
+import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.service';
 import { ProductCatalogCategoryService } from '../../../core/services/product-catalog-category.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { CashRegisterService } from '../../../core/services/cash-register.service';
@@ -37,6 +40,7 @@ import { Warehouse } from '../../../core/models/warehouse.model';
 import { CashRegister } from '../../../core/models/cash-register.model';
 import { PageResponse } from '../../../core/models/page.model';
 import { QuickCreateClientDialogComponent } from '../../admin/third-parties/dialogs/quick-create-client.dialog';
+import { ScaleConfigDialogComponent } from './scale-config-dialog';
 import Swal from 'sweetalert2';
 
 interface OrderLine {
@@ -46,6 +50,7 @@ interface OrderLine {
   taxType: string;
   quantity: number;
   subtotal: number;
+  isWeight: boolean;
 }
 
 @Component({
@@ -53,6 +58,7 @@ interface OrderLine {
   standalone: true,
   imports: [
     CurrencyPipe,
+    DecimalPipe,
     ReactiveFormsModule,
     MatButtonModule,
     MatIconModule,
@@ -74,7 +80,8 @@ export class PosVentaComponent {
   private readonly http = inject(HttpClient);
   private readonly posService = inject(PosService);
   private readonly saleService = inject(SaleService);
-  private readonly scaleService = inject(MockScaleService);
+  private readonly scaleService = inject(ScaleService);
+  private readonly unitOfMeasureService = inject(UnitOfMeasureService);
   private readonly categoryService = inject(ProductCatalogCategoryService);
   private readonly warehouseService = inject(WarehouseService);
   private readonly cashRegisterService = inject(CashRegisterService);
@@ -94,7 +101,35 @@ export class PosVentaComponent {
 
   // ── Scale ──
   readonly scaleReading = this.scaleService.currentReading;
+  readonly scaleStatus = this.scaleService.status;
+  readonly scaleError = this.scaleService.errorMessage;
   readonly isScaleActive = signal(false);
+  readonly selectedLineIndex = signal<number | null>(null);
+
+  readonly isScaleConnected = computed(() => this.scaleStatus() === SCALE_STATUS.CONNECTED);
+  readonly canCapture = computed(() => {
+    const reading = this.scaleReading();
+    return this.isScaleConnected() && !!reading && reading.stable;
+  });
+  readonly scaleStatusLabel = computed(() => {
+    switch (this.scaleStatus()) {
+      case SCALE_STATUS.CONNECTED:
+        return 'Conectada';
+      case SCALE_STATUS.ERROR:
+        return 'Error';
+      default:
+        return 'Desconectada';
+    }
+  });
+
+  /** Product UoM lookup, used to decide weight vs unit behaviour. */
+  private readonly unitById = computed(() => {
+    const map = new Map<string, UnitOfMeasure>();
+    for (const unit of this.unitOfMeasureService.units.value() ?? []) {
+      map.set(unit.id, unit);
+    }
+    return map;
+  });
 
   // ── Customer ──
   readonly selectedCustomer = signal<ThirdParty | null>(null);
@@ -331,28 +366,48 @@ export class PosVentaComponent {
 
   // ── Order line actions ──
 
+  /** True when the product's UoM is a weight unit (KG/GR/G/LB/...). */
+  isWeightProduct(product: Product): boolean {
+    if (!product.unitOfMeasureId) return false;
+    const unit = this.unitById().get(product.unitOfMeasureId);
+    return isWeightUomCode(unit?.code ?? null);
+  }
+
+  /** Selects (or toggles) an order line as the target of the next weighing. */
+  selectLine(index: number): void {
+    this.selectedLineIndex.set(this.selectedLineIndex() === index ? null : index);
+  }
+
   addToOrder(product: Product): void {
     const current = this.orderLines();
     const idx = current.findIndex((l) => l.productId === product.id);
+    const isWeight = this.isWeightProduct(product);
 
     if (idx >= 0) {
-      const line = current[idx];
-      const newQty = line.quantity + 1;
-      this.orderLines.update((lines) =>
-        lines.map((l, i) =>
-          i === idx ? { ...l, quantity: newQty, subtotal: newQty * l.unitPrice } : l,
-        ),
-      );
+      if (isWeight) {
+        // Weight products await an explicit scale capture; select the line.
+        this.selectedLineIndex.set(idx);
+      } else {
+        const line = current[idx];
+        const newQty = line.quantity + 1;
+        this.orderLines.update((lines) =>
+          lines.map((l, i) =>
+            i === idx ? { ...l, quantity: newQty, subtotal: newQty * l.unitPrice } : l,
+          ),
+        );
+      }
     } else {
       const newLine: OrderLine = {
         productId: product.id,
         productName: product.name,
         unitPrice: product.salePrice,
         taxType: product.taxType,
-        quantity: 1,
-        subtotal: product.salePrice,
+        quantity: isWeight ? 0 : 1,
+        subtotal: isWeight ? 0 : product.salePrice,
+        isWeight,
       };
       this.orderLines.update((lines) => [...lines, newLine]);
+      if (isWeight) this.selectedLineIndex.set(this.orderLines().length - 1);
     }
 
     this.searchControl.setValue('', { emitEvent: false });
@@ -433,6 +488,16 @@ export class PosVentaComponent {
       Swal.fire({
         title: 'Sin productos',
         text: 'Agregá al menos un producto a la orden.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
+    if (lines.some((l) => !(l.quantity > 0))) {
+      Swal.fire({
+        title: 'Producto sin cantidad',
+        text: 'Hay un producto a granel sin peso capturado.',
         icon: 'warning',
         confirmButtonText: 'Entendido',
       });
@@ -526,22 +591,92 @@ export class PosVentaComponent {
 
   // ── Scale ──
 
-  toggleScale(): void {
+  async toggleScale(): Promise<void> {
     if (this.isScaleActive()) {
       this.scaleService.stopPolling();
+      await this.scaleService.disconnect();
       this.isScaleActive.set(false);
-    } else {
+      return;
+    }
+
+    await this.scaleService.connect();
+    if (this.scaleService.status() === SCALE_STATUS.CONNECTED) {
       this.scaleService.startPolling();
       this.isScaleActive.set(true);
+    } else {
+      this.isScaleActive.set(false);
     }
   }
 
-  captureWeight(): void {
-    const reading = this.scaleReading();
-    if (!reading) return;
+  openScaleConfig(): void {
+    this.dialog
+      .open(ScaleConfigDialogComponent, { width: '480px' })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
 
-    // For now, show the captured weight — product integration pending
-    console.log('Weight captured:', reading.weight, reading.unit);
+  /** Captures the current stable reading and stores it as the line quantity (kg). */
+  captureWeight(targetIndex?: number): void {
+    const reading = this.scaleReading();
+    if (!reading) {
+      this.showScaleWarning('No hay lectura de la báscula. Conectala e intentá de nuevo.');
+      return;
+    }
+    if (!reading.stable) {
+      this.showScaleWarning('La báscula aún no está estable. Esperá unos segundos.');
+      return;
+    }
+
+    const index = this.resolveWeightLineIndex(targetIndex);
+    if (index === null) {
+      this.showScaleWarning('Seleccioná una línea de producto a granel para capturar el peso.');
+      return;
+    }
+
+    const kilograms = Math.round(toKilograms(reading.weight, reading.unit) * 1000) / 1000;
+    if (!(kilograms > 0)) {
+      this.showScaleWarning('El peso capturado debe ser mayor que cero.');
+      return;
+    }
+
+    this.setLineQuantity(index, kilograms);
+  }
+
+  captureWeightForLine(index: number): void {
+    this.captureWeight(index);
+  }
+
+  private resolveWeightLineIndex(targetIndex?: number): number | null {
+    const lines = this.orderLines();
+    if (
+      targetIndex !== undefined &&
+      targetIndex >= 0 &&
+      targetIndex < lines.length &&
+      lines[targetIndex].isWeight
+    ) {
+      return targetIndex;
+    }
+
+    const selected = this.selectedLineIndex();
+    if (selected !== null && selected < lines.length && lines[selected].isWeight) {
+      return selected;
+    }
+
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].isWeight) return i;
+    }
+    return null;
+  }
+
+  private setLineQuantity(index: number, quantity: number): void {
+    this.orderLines.update((lines) =>
+      lines.map((l, i) => (i === index ? { ...l, quantity, subtotal: quantity * l.unitPrice } : l)),
+    );
+  }
+
+  private showScaleWarning(text: string): void {
+    Swal.fire({ title: 'Báscula', text, icon: 'warning', confirmButtonText: 'Entendido' });
   }
 
   // ── Functional buttons ──
@@ -623,6 +758,16 @@ export class PosVentaComponent {
       Swal.fire({
         title: 'Sin productos',
         text: 'Agregá al menos un producto a la orden.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
+    if (lines.some((l) => !(l.quantity > 0))) {
+      Swal.fire({
+        title: 'Producto sin cantidad',
+        text: 'Hay un producto a granel sin peso capturado.',
         icon: 'warning',
         confirmButtonText: 'Entendido',
       });

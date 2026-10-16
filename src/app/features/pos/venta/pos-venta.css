@@ -206,6 +206,16 @@
   height: 36px;
 }
 
+/* Selected line is subtly highlighted */
+.order-table .mat-mdc-row.selected-line {
+  background: #e3f2fd;
+  box-shadow: inset 3px 0 0 #1565c0;
+}
+
+.order-table .mat-mdc-row.selected-line:hover {
+  background: #bbdefb;
+}
+
 .col-product {
   flex: 2;
   min-width: 90px;
@@ -273,6 +283,24 @@
   min-width: 24px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* Weight line: captured kg + capture-scale button (no +/- controls) */
+.qty-weight {
+  gap: 4px;
+}
+
+.qty-pending {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.qty-btn.weigh .mat-icon {
+  color: #1565c0;
+}
+
+.qty-btn.weigh:disabled .mat-icon {
+  color: #cbd5e1;
 }
 
 /* Totals */
@@ -448,6 +476,116 @@
     opacity: 0.4;
     transform: scale(1.6);
   }
+}
+
+/* ── Scale indicator chip ── */
+.scale-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 4px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #64748b;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.scale-status-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.scale-indicator-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 76px;
+}
+
+.scale-status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.scale-weight {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.scale-weight.unstable {
+  color: #d97706;
+}
+
+.scale-weight.unstable em {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.scale-weight.muted {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.scale-error {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #ef4444;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scale-config-btn {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px;
+  padding: 0;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.scale-config-btn .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Connected — green */
+.scale-indicator.connected {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #2e7d32;
+}
+
+.scale-indicator.connected .scale-status-icon {
+  color: #2e7d32;
+}
+
+/* Error — red (kept after .connected so it wins if both apply) */
+.scale-indicator.error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.scale-indicator.error .scale-status-icon {
+  color: #ef4444;
 }
 
 .search-option-price {
