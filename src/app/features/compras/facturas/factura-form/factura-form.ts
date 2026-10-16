@@ -21,6 +21,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { SupplierInvoiceService } from '../../../../core/services/supplier-invoice.service';
 import { ThirdPartyService } from '../../../../core/services/third-party.service';
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
+import { AuthService } from '../../../../core/auth/auth.service';
 import { QuickCreateSupplierDialogComponent } from '../../../admin/products/dialogs/quick-create-supplier.dialog';
 import type {
   ThirdParty,
@@ -55,12 +56,22 @@ export class FacturaFormComponent implements OnInit {
   private readonly service = inject(SupplierInvoiceService);
   readonly thirdPartyService = inject(ThirdPartyService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
+  private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
 
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
+
+  /**
+   * Manual retention is an explicit override of the data-driven retention engine.
+   * It is only offered to ADMIN and CONTADOR; every other role always defers to the backend.
+   */
+  readonly canOverrideRetention = computed(() => {
+    const role = this.auth.userRole();
+    return role === 'ADMIN' || role === 'CONTADOR';
+  });
 
   readonly linkedOcIds = signal<string[]>([]);
   readonly loadingOc = signal(false);
@@ -111,10 +122,7 @@ export class FacturaFormComponent implements OnInit {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0)],
     }),
-    retentionTotal: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
+    retentionTotal: new FormControl<number | null>(null, { validators: [Validators.min(0)] }),
     notes: new FormControl('', { nonNullable: true }),
   });
 
@@ -254,6 +262,11 @@ export class FacturaFormComponent implements OnInit {
       return String(d ?? '');
     };
 
+    // retentionTotal stays null unless an ADMIN/CONTADOR typed an explicit override. Null tells
+    // the backend to compute the retention data-driven (PurchaseRetentionConfig + ICA).
+    const override =
+      this.canOverrideRetention() && raw.retentionTotal !== null ? raw.retentionTotal : null;
+
     const request: SupplierInvoiceRequest = {
       supplierId: raw.supplierId,
       invoiceNumber: raw.invoiceNumber,
@@ -261,8 +274,8 @@ export class FacturaFormComponent implements OnInit {
       dueDate: toDateStr(raw.dueDate),
       subtotal: raw.subtotal,
       ivaTotal: raw.ivaTotal,
-      retentionTotal: raw.retentionTotal,
-      total: raw.subtotal + raw.ivaTotal - raw.retentionTotal,
+      retentionTotal: override,
+      total: raw.subtotal + raw.ivaTotal - (override ?? 0),
       ocIds: this.linkedOcIds(),
       notes: raw.notes || null,
     };

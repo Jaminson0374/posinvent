@@ -126,11 +126,14 @@
         <input matInput type="number" min="0" step="0.01" formControlName="ivaTotal" />
       </mat-form-field>
 
-      <!-- Retención -->
-      <mat-form-field appearance="outline">
-        <mat-label>Retención total</mat-label>
-        <input matInput type="number" min="0" step="0.01" formControlName="retentionTotal" />
-      </mat-form-field>
+      <!-- Retención (override manual, solo ADMIN/CONTADOR) -->
+      @if (canOverrideRetention()) {
+        <mat-form-field appearance="outline">
+          <mat-label>Retención total</mat-label>
+          <input matInput type="number" min="0" step="0.01" formControlName="retentionTotal" />
+          <mat-hint>Opcional: vacío usa el cálculo automático</mat-hint>
+        </mat-form-field>
+      }
 
       <!-- Total (auto-calculated) -->
       <mat-form-field appearance="outline">

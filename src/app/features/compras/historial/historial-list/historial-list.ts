@@ -1,7 +1,6 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { HttpClient } from '@angular/common/http';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,22 +17,13 @@ import {
   MatAutocompleteSelectedEvent,
 } from '@angular/material/autocomplete';
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { debounceTime, distinctUntilChanged, startWith, Observable } from 'rxjs';
 import { ThirdPartyService } from '../../../../core/services/third-party.service';
+import {
+  PurchaseHistoryEntry,
+  PurchaseHistoryService,
+} from '../../../../core/services/purchase-history.service';
 import { PageResponse } from '../../../../core/models/page.model';
 import type { ThirdPartySupplierOption } from '../../../../core/models/third-party.model';
-
-export interface PurchaseHistoryEntry {
-  id: string;
-  ocId: string;
-  supplier: string;
-  orderDate: string;
-  receiptDate: string;
-  invoiceNumber: string;
-  total: number;
-  status: string;
-  entryType: string;
-}
 
 @Component({
   selector: 'app-historial-list',
@@ -59,7 +49,7 @@ export interface PurchaseHistoryEntry {
   styleUrl: './historial-list.css',
 })
 export class HistorialListComponent implements OnInit {
-  private readonly http = inject(HttpClient);
+  private readonly purchaseHistoryService = inject(PurchaseHistoryService);
   private readonly destroyRef = inject(DestroyRef);
   readonly thirdPartyService = inject(ThirdPartyService);
 
@@ -78,13 +68,13 @@ export class HistorialListComponent implements OnInit {
   });
 
   readonly displayedColumns = [
-    'ocId',
-    'supplier',
-    'orderDate',
-    'receiptDate',
-    'invoiceNumber',
-    'total',
+    'eventType',
+    'documentId',
+    'supplierName',
+    'description',
     'status',
+    'amount',
+    'eventTimestamp',
   ];
   readonly pageSizeOptions = [10, 20, 30];
   readonly page = signal(0);
@@ -124,23 +114,14 @@ export class HistorialListComponent implements OnInit {
     this.error.set(null);
     const raw = this.filterForm.getRawValue();
 
-    const params = new URLSearchParams({
-      page: `${this.page()}`,
-      size: `${this.pageSize()}`,
-    });
-
-    if (raw.from) {
-      params.set('from', raw.from.toISOString().split('T')[0]);
-    }
-    if (raw.to) {
-      params.set('to', raw.to.toISOString().split('T')[0]);
-    }
-    if (raw.supplierId) {
-      params.set('supplierId', raw.supplierId);
-    }
-
-    this.http
-      .get<PageResponse<PurchaseHistoryEntry>>(`/api/v1/purchase-history?${params.toString()}`)
+    this.purchaseHistoryService
+      .list({
+        from: raw.from ? raw.from.toISOString().split('T')[0] : null,
+        to: raw.to ? raw.to.toISOString().split('T')[0] : null,
+        supplierId: raw.supplierId || null,
+        page: this.page(),
+        size: this.pageSize(),
+      })
       .subscribe({
         next: (response) => {
           this.loading.set(false);
