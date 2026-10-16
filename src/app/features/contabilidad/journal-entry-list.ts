@@ -1,10 +1,12 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { JournalEntryDetailDialogComponent } from './journal-entry-detail-dialog';
 import type { JournalEntry } from '../../core/models/journal-entry.model';
 
 @Component({
@@ -60,7 +62,7 @@ import type { JournalEntry } from '../../core/models/journal-entry.model';
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let e">
-              <button mat-icon-button [matTooltip]="'Ver detalle'">
+              <button mat-icon-button [matTooltip]="'Ver detalle'" (click)="openDetail(e)">
                 <mat-icon>visibility</mat-icon>
               </button>
             </td>
@@ -83,6 +85,7 @@ import type { JournalEntry } from '../../core/models/journal-entry.model';
   ],
 })
 export class JournalEntryListComponent {
+  private readonly dialog = inject(MatDialog);
   readonly entries = input.required<JournalEntry[]>();
   readonly loading = input(false);
   readonly columns = input([
@@ -94,6 +97,13 @@ export class JournalEntryListComponent {
     'actions',
   ]);
   readonly createClick = output<void>();
+
+  openDetail(entry: JournalEntry): void {
+    this.dialog.open(JournalEntryDetailDialogComponent, {
+      width: '640px',
+      data: entry,
+    });
+  }
 
   sourceLabel(s: string): string {
     switch (s) {
