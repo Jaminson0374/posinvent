@@ -100,6 +100,8 @@ export class PagoFormComponent {
   // ── Outstanding invoices ──────────────────────────────────────────
   readonly outstandingInvoices = signal<SupplierInvoice[]>([]);
   readonly selectedInvoiceIds = signal<Set<string>>(new Set());
+  /** Applied amount per selected invoice, keyed by invoiceId. */
+  readonly appliedAmounts = signal<Record<string, number>>({});
 
   // ── Supplier ──────────────────────────────────────────────────────
   onSupplierSelected(ev: MatAutocompleteSelectedEvent): void {
@@ -173,12 +175,33 @@ export class PagoFormComponent {
   // ── Invoice selection ─────────────────────────────────────────────
   toggleInvoice(id: string): void {
     const current = new Set(this.selectedInvoiceIds());
+    const amounts = { ...this.appliedAmounts() };
     if (current.has(id)) {
       current.delete(id);
+      delete amounts[id];
     } else {
       current.add(id);
+      const inv = this.outstandingInvoices().find((i) => i.id === id);
+      amounts[id] = inv ? inv.total : 0;
     }
     this.selectedInvoiceIds.set(current);
+    this.appliedAmounts.set(amounts);
+  }
+
+  getAppliedAmount(id: string): number {
+    return this.appliedAmounts()[id] ?? 0;
+  }
+
+  setAppliedAmount(id: string, value: number): void {
+    if (!this.selectedInvoiceIds().has(id)) return;
+    const amounts = { ...this.appliedAmounts() };
+    amounts[id] = Number.isFinite(value) ? value : 0;
+    this.appliedAmounts.set(amounts);
+  }
+
+  onAppliedAmountInput(id: string, event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    this.setAppliedAmount(id, value);
   }
 
   readonly selectedInvoices = computed(() => {
@@ -191,6 +214,19 @@ export class PagoFormComponent {
   });
 
   readonly selectedCount = computed(() => this.selectedInvoiceIds().size);
+
+  /** Sum of the applied amounts across the selected invoices. */
+  readonly appliedTotal = computed(() => {
+    const amounts = this.appliedAmounts();
+    return this.selectedInvoices().reduce((sum, inv) => sum + (amounts[inv.id] ?? 0), 0);
+  });
+
+  /** True when the payment amount does not match the sum of applied amounts. */
+  readonly appliedMismatch = computed(() => {
+    if (this.selectedCount() === 0) return false;
+    const amount = this.form.controls.amount.getRawValue() ?? 0;
+    return Math.abs(amount - this.appliedTotal()) > 0.009;
+  });
 
   readonly paymentExceedsInvoices = computed(() => {
     const amount = this.form.controls.amount.getRawValue() ?? 0;
@@ -216,17 +252,33 @@ export class PagoFormComponent {
       return String(d ?? '');
     };
 
+    const applied = this.appliedAmounts();
+    const invoicePayments = selected.map((inv) => ({
+      invoiceId: inv.id,
+      appliedAmount: applied[inv.id] ?? inv.total,
+    }));
+
+    if (invoicePayments.some((p) => p.appliedAmount < 0.01)) {
+      this.error.set('Cada monto aplicado debe ser mayor o igual a 0.01.');
+      return;
+    }
+
+    const amount = raw.amount ?? 0;
+    const appliedTotal = invoicePayments.reduce((sum, p) => sum + p.appliedAmount, 0);
+    if (Math.abs(amount - appliedTotal) > 0.009) {
+      this.error.set(
+        `La suma de los montos aplicados (${appliedTotal}) debe coincidir con el monto del pago (${amount}).`,
+      );
+      return;
+    }
+
     const request: PaymentRequest = {
       supplierId: raw.supplierId,
-      amount: raw.amount ?? 0,
+      amount,
       paymentDate: toDateStr(raw.paymentDate),
       method: raw.method,
       reference: raw.reference || null,
-      invoiceIds: selected.map((inv) => inv.id),
-      appliedAmounts: selected.map((inv) => ({
-        invoiceId: inv.id,
-        appliedAmount: inv.total,
-      })),
+      invoicePayments,
     };
 
     this.saving.set(true);
