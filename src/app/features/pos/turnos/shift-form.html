@@ -139,17 +139,65 @@
         @if (mode() === 'close') {
           <mat-divider class="divider" />
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Monto de cierre</mat-label>
-            <input
-              matInput
-              type="number"
-              min="0"
-              [formControl]="form.controls.closingAmount"
-              placeholder="0"
-            />
-            <span matTextPrefix>$&nbsp;</span>
-          </mat-form-field>
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Efectivo</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [formControl]="form.controls.totalCash"
+                placeholder="0"
+              />
+              <span matTextPrefix>$&nbsp;</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tarjeta</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [formControl]="form.controls.totalCard"
+                placeholder="0"
+              />
+              <span matTextPrefix>$&nbsp;</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Transferencia</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [formControl]="form.controls.totalTransfer"
+                placeholder="0"
+              />
+              <span matTextPrefix>$&nbsp;</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Crédito</mat-label>
+              <input
+                matInput
+                type="number"
+                min="0"
+                [formControl]="form.controls.totalCredit"
+                placeholder="0"
+              />
+              <span matTextPrefix>$&nbsp;</span>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Notas</mat-label>
+              <textarea
+                matInput
+                rows="2"
+                [formControl]="form.controls.notes"
+                placeholder="Observaciones opcionales..."
+              ></textarea>
+            </mat-form-field>
+          </div>
         }
       </mat-card-content>
 
