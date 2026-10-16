@@ -80,7 +80,11 @@ export class ShiftFormComponent implements OnInit {
 
   readonly form = new FormGroup({
     openingAmount: new FormControl<number | null>(null),
-    closingAmount: new FormControl<number | null>(null),
+    totalCash: new FormControl<number | null>(null),
+    totalCard: new FormControl<number | null>(null),
+    totalTransfer: new FormControl<number | null>(null),
+    totalCredit: new FormControl<number | null>(null),
+    notes: new FormControl<string | null>(null),
   });
 
   ngOnInit(): void {
@@ -151,6 +155,11 @@ export class ShiftFormComponent implements OnInit {
 
           if (shift.status === 'OPEN') {
             this.mode.set('close');
+            // Prefill the cash total with the expected closing amount so the cashier only
+            // has to confirm or adjust it, matching the smooth transition of the previous flow.
+            if (shift.closingAmount != null) {
+              this.form.controls.totalCash.setValue(shift.closingAmount);
+            }
           }
 
           this.loading.set(false);
@@ -232,25 +241,36 @@ export class ShiftFormComponent implements OnInit {
     const shift = this.shiftData();
     if (!shift) return;
 
-    const closingAmount = this.form.controls.closingAmount.value;
-    if (closingAmount == null || closingAmount < 0) {
+    const raw = this.form.getRawValue();
+    const { totalCash } = raw;
+    const totalCard = raw.totalCard ?? 0;
+    const totalTransfer = raw.totalTransfer ?? 0;
+    const totalCredit = raw.totalCredit ?? 0;
+
+    if (
+      totalCash == null ||
+      totalCash < 0 ||
+      totalCard < 0 ||
+      totalTransfer < 0 ||
+      totalCredit < 0
+    ) {
       Swal.fire({
         icon: 'warning',
-        title: 'Monto requerido',
-        text: 'Ingresá el monto de cierre.',
+        title: 'Montos inválidos',
+        text: 'Ingresá el efectivo y verificá que ningún monto sea negativo.',
         confirmButtonColor: '#ef4444',
       });
       return;
     }
 
+    const countedTotal = totalCash + totalCard + totalTransfer + totalCredit;
+
     const result = await Swal.fire({
       icon: 'warning',
       title: '¿Cerrar turno?',
-      text: `Se cerrará el turno con un monto de ${new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0,
-      }).format(closingAmount)}. Esta acción no se puede deshacer.`,
+      text: `Se cerrará el turno con un total contado de ${this.formatCurrency(
+        countedTotal,
+      )}. Esta acción no se puede deshacer.`,
       showCancelButton: true,
       confirmButtonText: 'Sí, cerrar turno',
       cancelButtonText: 'Cancelar',
@@ -266,17 +286,18 @@ export class ShiftFormComponent implements OnInit {
     try {
       await firstValueFrom(
         this.shiftService.close(shift.id, {
-          totalCash: closingAmount,
-          totalCard: 0,
-          totalTransfer: 0,
-          totalCredit: 0,
+          totalCash,
+          totalCard,
+          totalTransfer,
+          totalCredit,
+          notes: raw.notes || undefined,
         }),
       );
 
       await Swal.fire({
         icon: 'success',
         title: 'Turno cerrado',
-        text: 'El turno se cerró correctamente.',
+        text: `El turno se cerró correctamente. Total contado: ${this.formatCurrency(countedTotal)}.`,
         confirmButtonColor: '#15803d',
       });
 
@@ -290,6 +311,15 @@ export class ShiftFormComponent implements OnInit {
         confirmButtonColor: '#ef4444',
       });
     }
+  }
+
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
   }
 
   volver(): void {
