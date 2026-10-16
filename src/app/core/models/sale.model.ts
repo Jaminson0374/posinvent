@@ -1,3 +1,8 @@
+import type { DiscountType } from '../domain/discount';
+
+// Re-exported so existing importers of `DiscountType` from this model keep working.
+export type { DiscountType } from '../domain/discount';
+
 export const SALES_DOCUMENT_TYPE = {
   QUOTE: 'QUOTE',
   ORDER: 'ORDER',
@@ -60,6 +65,8 @@ export interface SaleItem {
   subtotal: number;
   lineNumber: number;
   batchId: string | null;
+  discountType?: DiscountType | null;
+  discountValue?: number | null;
 }
 
 export interface SalesDocumentRequest {
@@ -77,6 +84,8 @@ export interface SaleItemRequest {
   unitPrice: number;
   taxType: string;
   batchId?: string | null;
+  discountType?: DiscountType | null;
+  discountValue?: number | null;
 }
 
 export interface TransitionRequest {

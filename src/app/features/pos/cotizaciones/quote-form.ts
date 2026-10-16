@@ -49,6 +49,11 @@ import {
   SalesDocumentRequest,
   SaleItemRequest,
 } from '../../../core/models/sale.model';
+import {
+  computeDiscountTotals,
+  normalizeDiscountType,
+  roundHalfUp2,
+} from '../../../core/domain/discount';
 import { PageResponse } from '../../../core/models/page.model';
 import { QuickCreateClientDialogComponent } from '../../admin/third-parties/dialogs/quick-create-client.dialog';
 import Swal from 'sweetalert2';
@@ -60,6 +65,8 @@ type LineForm = FormGroup<{
   unitPrice: FormControl<number>;
   taxType: FormControl<string>;
   batchId: FormControl<string>;
+  discountType: FormControl<string>;
+  discountValue: FormControl<number>;
 }>;
 
 interface LineBatchResource {
@@ -121,6 +128,9 @@ export class QuoteFormComponent implements OnInit {
   private readonly batchResources = new Map<LineForm, LineBatchResource>();
   private readonly batchRefresh = signal(0);
 
+  /** Bumped on any form change so the derived totals recompute live. */
+  private readonly formVersion = signal(0);
+
   readonly products = computed(() => this.productService.products.value()?.content ?? []);
 
   readonly productSearchQuery = signal('');
@@ -154,6 +164,12 @@ export class QuoteFormComponent implements OnInit {
   readonly linesArray = this.form.controls.linesArray;
 
   constructor() {
+    // Keep the derived totals reactive: FormControl values are not signals, so any
+    // change bumps `formVersion`, which the totals computations read.
+    this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.formVersion.update((tick) => tick + 1);
+    });
+
     // Load the available batches for every line whose product and warehouse are set, then apply the
     // FEFO default. `batchRefresh` is bumped by the form handlers because FormControl values are not signals.
     effect(() => {
@@ -234,35 +250,33 @@ export class QuoteFormComponent implements OnInit {
     this.batchRefresh.update((tick) => tick + 1);
   }
 
-  readonly subtotal = computed(() =>
-    this.linesArray.controls.reduce(
-      (sum, line) => sum + line.controls.quantity.value * line.controls.unitPrice.value,
-      0,
-    ),
-  );
-
-  readonly taxTotals = computed(() => {
-    let tax0 = 0;
-    let tax5 = 0;
-    let tax19 = 0;
-
-    for (const line of this.linesArray.controls) {
-      const qty = line.controls.quantity.value;
-      const price = line.controls.unitPrice.value;
-      const taxType = line.controls.taxType.value;
-      const amount = qty * price;
-      const rate = this.taxRate(taxType);
-      const tax = amount * rate;
-
-      if (rate === 0) tax0 += tax;
-      else if (rate === 0.05) tax5 += tax;
-      else tax19 += tax;
-    }
-
-    return { tax0, tax5, tax19, totalTax: tax0 + tax5 + tax19 };
+  /** Full per-document calculation with line discounts applied BEFORE IVA. */
+  private readonly documentTotals = computed(() => {
+    this.formVersion();
+    return computeDiscountTotals(
+      this.linesArray.controls.map((line) => ({
+        gross: roundHalfUp2(line.controls.quantity.value * line.controls.unitPrice.value),
+        taxRatePercent: this.taxRatePercent(line.controls.taxType.value),
+        discountType: line.controls.discountType.value,
+        discountValue: line.controls.discountValue.value,
+      })),
+    );
   });
 
-  readonly grandTotal = computed(() => this.subtotal() + this.taxTotals().totalTax);
+  /** Net taxable base after line discounts. */
+  readonly subtotal = computed(() => this.documentTotals().net);
+
+  readonly taxTotals = computed(() => {
+    const totals = this.documentTotals();
+    return {
+      tax0: totals.tax0,
+      tax5: totals.tax5,
+      tax19: totals.tax19,
+      totalTax: roundHalfUp2(totals.tax0 + totals.tax5 + totals.tax19),
+    };
+  });
+
+  readonly grandTotal = computed(() => this.documentTotals().total);
 
   readonly availableTransitions = computed(() => {
     const doc = this.documentData();
@@ -352,6 +366,8 @@ export class QuoteFormComponent implements OnInit {
       unitPrice: number;
       taxType: string;
       batchId: string | null;
+      discountType: string | null;
+      discountValue: number | null;
     }>,
   ): LineForm {
     return this.fb.nonNullable.group({
@@ -361,6 +377,8 @@ export class QuoteFormComponent implements OnInit {
       unitPrice: [existing?.unitPrice ?? 0, [Validators.required, Validators.min(0)]],
       taxType: [existing?.taxType ?? 'IVA0', Validators.required],
       batchId: [existing?.batchId ?? ''],
+      discountType: [normalizeDiscountType(existing?.discountType)],
+      discountValue: [existing?.discountValue ?? 0, [Validators.min(0)]],
     }) as unknown as LineForm;
   }
 
@@ -507,12 +525,12 @@ export class QuoteFormComponent implements OnInit {
     this.productSearchQuery.set(input.value);
   }
 
-  private taxRate(taxType: string): number {
+  private taxRatePercent(taxType: string): number {
     switch (taxType) {
       case 'IVA5':
-        return 0.05;
+        return 5;
       case 'IVA19':
-        return 0.19;
+        return 19;
       default:
         return 0;
     }
@@ -574,12 +592,15 @@ export class QuoteFormComponent implements OnInit {
       const item = items[i];
       if (!item.productId || item.quantity <= 0) continue;
 
+      const discountType = normalizeDiscountType(item.discountType);
       const request: SaleItemRequest = {
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         taxType: item.taxType,
         batchId: item.batchId || null,
+        discountType,
+        discountValue: discountType === 'NONE' ? 0 : (item.discountValue ?? 0),
       };
 
       await firstValueFrom(this.saleService.addItem(documentId, request));

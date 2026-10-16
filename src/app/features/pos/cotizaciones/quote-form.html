@@ -171,6 +171,23 @@
             </mat-select>
           </mat-form-field>
 
+          <!-- Line discount: type + value -->
+          <mat-form-field appearance="outline" class="qf-line-discount-type">
+            <mat-label>Desc.</mat-label>
+            <mat-select formControlName="discountType">
+              <mat-option value="NONE">—</mat-option>
+              <mat-option value="PCT">Porcentaje (%)</mat-option>
+              <mat-option value="AMOUNT">Monto ($)</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          @if (line.controls.discountType.value !== 'NONE') {
+            <mat-form-field appearance="outline" class="qf-line-discount-value">
+              <mat-label>Valor desc.</mat-label>
+              <input matInput type="number" min="0" step="0.01" formControlName="discountValue" />
+            </mat-form-field>
+          }
+
           <!-- Subtotal (computed, read-only) -->
           <mat-form-field appearance="outline" class="qf-line-subtotal">
             <mat-label>Subtotal</mat-label>

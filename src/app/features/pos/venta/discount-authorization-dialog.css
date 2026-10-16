@@ -1,0 +1,21 @@
+.dad-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.dad-content {
+  min-width: 360px;
+  padding-top: 8px !important;
+}
+
+.dad-hint {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.dad-field {
+  width: 100%;
+}

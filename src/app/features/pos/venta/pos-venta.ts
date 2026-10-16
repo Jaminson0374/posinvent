@@ -23,13 +23,20 @@ import {
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { debounceTime, distinctUntilChanged, filter } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, firstValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Product } from '../../../core/models/product.model';
+import {
+  DiscountType,
+  calculateLineDiscount,
+  computeDiscountTotals,
+  normalizeDiscountType,
+  roundHalfUp2,
+} from '../../../core/domain/discount';
 import { ThirdParty } from '../../../core/models/third-party.model';
 import { UnitOfMeasure } from '../../../core/models/product-catalog.model';
 import { SCALE_STATUS, isWeightUomCode, toKilograms } from '../../../core/models/scale.model';
-import { PosService } from '../../../core/services/pos.service';
+import { CheckoutRequest, CheckoutResponse, PosService } from '../../../core/services/pos.service';
 import { SaleService } from '../../../core/services/sale.service';
 import { ScaleService } from '../../../core/services/scale.service';
 import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.service';
@@ -41,6 +48,10 @@ import { CashRegister } from '../../../core/models/cash-register.model';
 import { PageResponse } from '../../../core/models/page.model';
 import { QuickCreateClientDialogComponent } from '../../admin/third-parties/dialogs/quick-create-client.dialog';
 import { ScaleConfigDialogComponent } from './scale-config-dialog';
+import {
+  DiscountAuthorizationCredentials,
+  DiscountAuthorizationDialogComponent,
+} from './discount-authorization-dialog';
 import Swal from 'sweetalert2';
 
 interface OrderLine {
@@ -49,7 +60,12 @@ interface OrderLine {
   unitPrice: number;
   taxType: string;
   quantity: number;
+  /** Gross amount: quantity × unitPrice (before any discount). */
   subtotal: number;
+  /** Manual line discount, recalculated with the backend rounding. */
+  lineDiscount: number;
+  discountType: DiscountType;
+  discountValue: number;
   isWeight: boolean;
 }
 
@@ -97,7 +113,12 @@ export class PosVentaComponent {
 
   // ── Order lines ──
   readonly orderLines = signal<OrderLine[]>([]);
-  readonly displayedColumns = ['product', 'qty', 'price', 'subtotal', 'actions'];
+  readonly displayedColumns = ['product', 'qty', 'price', 'subtotal', 'discount', 'actions'];
+
+  // ── Discounts ──
+  readonly documentDiscountType = signal<DiscountType>('NONE');
+  readonly documentDiscountValue = signal<number>(0);
+  readonly discountReason = signal<string>('');
 
   // ── Scale ──
   readonly scaleReading = this.scaleService.currentReading;
@@ -147,29 +168,45 @@ export class PosVentaComponent {
   readonly selectedCashRegister = signal<CashRegister | null>(null);
   readonly infrastructureError = signal<string | null>(null);
 
-  // ── Computed totals ──
-  readonly subtotal = computed(() =>
-    this.orderLines().reduce((sum, line) => sum + line.subtotal, 0),
+  // ── Computed totals (discount BEFORE IVA, prorated document discount) ──
+
+  /** Full document calculation mirroring the backend DiscountEngineService. */
+  readonly documentTotals = computed(() =>
+    computeDiscountTotals(
+      this.orderLines().map((line) => ({
+        gross: roundHalfUp2(line.subtotal),
+        taxRatePercent: this.resolveTaxRatePercent(line.taxType),
+        discountType: line.discountType,
+        discountValue: line.discountValue,
+      })),
+      this.documentDiscountType(),
+      this.documentDiscountValue(),
+    ),
   );
 
+  /** Gross subtotal before discounts (sum of line.extras). */
+  readonly grossSubtotal = computed(() =>
+    roundHalfUp2(this.orderLines().reduce((sum, line) => sum + line.subtotal, 0)),
+  );
+
+  readonly lineDiscountTotal = computed(() => this.documentTotals().lineDiscountTotal);
+  readonly documentDiscountAmount = computed(() => this.documentTotals().documentDiscount);
+  readonly discountTotal = computed(() => this.documentTotals().discountTotal);
+
+  /** Net taxable base after line and document discounts. */
+  readonly subtotal = computed(() => this.documentTotals().net);
+
   readonly taxTotals = computed(() => {
-    const lines = this.orderLines();
-    let tax0 = 0;
-    let tax5 = 0;
-    let tax19 = 0;
-
-    for (const line of lines) {
-      const rate = this.resolveTaxRate(line.taxType);
-      const tax = line.subtotal * rate;
-      if (rate === 0) tax0 += tax;
-      else if (rate === 0.05) tax5 += tax;
-      else tax19 += tax;
-    }
-
-    return { tax0, tax5, tax19, totalTax: tax0 + tax5 + tax19 };
+    const totals = this.documentTotals();
+    return {
+      tax0: totals.tax0,
+      tax5: totals.tax5,
+      tax19: totals.tax19,
+      totalTax: roundHalfUp2(totals.tax0 + totals.tax5 + totals.tax19),
+    };
   });
 
-  readonly grandTotal = computed(() => this.subtotal() + this.taxTotals().totalTax);
+  readonly grandTotal = computed(() => this.documentTotals().total);
 
   readonly grandTotalFormatted = computed(() => this.formatCurrency(this.grandTotal()));
 
@@ -317,12 +354,13 @@ export class PosVentaComponent {
     return normalized.startsWith('media/') ? `/${normalized}` : `/media/${normalized}`;
   }
 
-  private resolveTaxRate(taxType: string): number {
+  /** Tax rate as a percentage (the backend works in percentages, e.g. 19 not 0.19). */
+  private resolveTaxRatePercent(taxType: string): number {
     switch (taxType) {
       case 'IVA_5':
-        return 0.05;
+        return 5;
       case 'IVA_19':
-        return 0.19;
+        return 19;
       default:
         return 0;
     }
@@ -385,21 +423,23 @@ export class PosVentaComponent {
         const line = current[idx];
         const newQty = line.quantity + 1;
         this.orderLines.update((lines) =>
-          lines.map((l, i) =>
-            i === idx ? { ...l, quantity: newQty, subtotal: newQty * l.unitPrice } : l,
-          ),
+          lines.map((l, i) => (i === idx ? this.recalculateLine({ ...l, quantity: newQty }) : l)),
         );
       }
     } else {
-      const newLine: OrderLine = {
+      const quantity = isWeight ? 0 : 1;
+      const newLine = this.recalculateLine({
         productId: product.id,
         productName: product.name,
         unitPrice: product.salePrice,
         taxType: product.taxType,
-        quantity: isWeight ? 0 : 1,
-        subtotal: isWeight ? 0 : product.salePrice,
+        quantity,
+        subtotal: roundHalfUp2(quantity * product.salePrice),
+        lineDiscount: 0,
+        discountType: 'NONE',
+        discountValue: 0,
         isWeight,
-      };
+      });
       this.orderLines.update((lines) => [...lines, newLine]);
       if (isWeight) this.selectedLineIndex.set(this.orderLines().length - 1);
     }
@@ -409,11 +449,7 @@ export class PosVentaComponent {
 
   incrementLine(index: number): void {
     this.orderLines.update((lines) =>
-      lines.map((l, i) => {
-        if (i !== index) return l;
-        const qty = l.quantity + 1;
-        return { ...l, quantity: qty, subtotal: qty * l.unitPrice };
-      }),
+      lines.map((l, i) => (i === index ? this.recalculateLine({ ...l, quantity: l.quantity + 1 }) : l)),
     );
   }
 
@@ -424,12 +460,18 @@ export class PosVentaComponent {
       return;
     }
     this.orderLines.update((lines) =>
-      lines.map((l, i) => {
-        if (i !== index) return l;
-        const qty = l.quantity - 1;
-        return { ...l, quantity: qty, subtotal: qty * l.unitPrice };
-      }),
+      lines.map((l, i) => (i === index ? this.recalculateLine({ ...l, quantity: l.quantity - 1 }) : l)),
     );
+  }
+
+  /** Recomputes the gross subtotal and the line discount with the backend rounding. */
+  private recalculateLine(line: OrderLine): OrderLine {
+    const subtotal = roundHalfUp2(line.quantity * line.unitPrice);
+    return {
+      ...line,
+      subtotal,
+      lineDiscount: calculateLineDiscount(subtotal, line.discountType, line.discountValue),
+    };
   }
 
   removeLine(index: number): void {
@@ -547,6 +589,8 @@ export class PosVentaComponent {
             quantity: line.quantity,
             unitPrice: line.unitPrice,
             taxType: line.taxType,
+            discountType: line.discountType,
+            discountValue: line.discountValue,
           })
           .toPromise()!;
       }
@@ -665,8 +709,48 @@ export class PosVentaComponent {
 
   private setLineQuantity(index: number, quantity: number): void {
     this.orderLines.update((lines) =>
-      lines.map((l, i) => (i === index ? { ...l, quantity, subtotal: quantity * l.unitPrice } : l)),
+      lines.map((l, i) => (i === index ? this.recalculateLine({ ...l, quantity }) : l)),
     );
+  }
+
+  // ── Discount inputs ──
+
+  setLineDiscountType(index: number, value: string): void {
+    const type = normalizeDiscountType(value);
+    this.orderLines.update((lines) =>
+      lines.map((l, i) =>
+        i === index
+          ? this.recalculateLine({
+              ...l,
+              discountType: type,
+              discountValue: type === 'NONE' ? 0 : l.discountValue,
+            })
+          : l,
+      ),
+    );
+  }
+
+  setLineDiscountValue(index: number, raw: string): void {
+    const parsed = Number(raw);
+    const discountValue = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    this.orderLines.update((lines) =>
+      lines.map((l, i) => (i === index ? this.recalculateLine({ ...l, discountValue }) : l)),
+    );
+  }
+
+  setDocumentDiscountType(value: string): void {
+    const type = normalizeDiscountType(value);
+    this.documentDiscountType.set(type);
+    if (type === 'NONE') this.documentDiscountValue.set(0);
+  }
+
+  setDocumentDiscountValue(raw: string): void {
+    const parsed = Number(raw);
+    this.documentDiscountValue.set(Number.isFinite(parsed) && parsed > 0 ? parsed : 0);
+  }
+
+  setDiscountReason(raw: string): void {
+    this.discountReason.set(raw);
   }
 
   private showScaleWarning(text: string): void {
@@ -827,6 +911,8 @@ export class PosVentaComponent {
             quantity: line.quantity,
             unitPrice: line.unitPrice,
             taxType: line.taxType,
+            discountType: line.discountType,
+            discountValue: line.discountValue,
           })
           .toPromise()!;
       }
@@ -834,14 +920,16 @@ export class PosVentaComponent {
       // 3. Transition to CONFIRMED
       await this.saleService.transitionDocument(docId, 'CONFIRMED').toPromise()!;
 
-      // 4. Checkout
-      const result = await this.posService
-        .checkout({
-          orderId: docId,
-          cashRegisterId,
-          payments: paymentResult.lines,
-        })
-        .toPromise()!;
+      // 4. Checkout (requests an admin authorization and retries when the discount
+      //    exceeds policy and the backend answers DISCOUNT_AUTHORIZATION_REQUIRED).
+      const result = await this.checkoutWithAuthorization({
+        orderId: docId,
+        cashRegisterId,
+        payments: paymentResult.lines,
+        documentDiscountType: this.documentDiscountType(),
+        documentDiscountValue: this.documentDiscountValue(),
+        discountReason: this.discountReason().trim() || null,
+      });
 
       // 5. Success
       const totalStr = this.formatCurrency(this.grandTotal());
@@ -866,14 +954,76 @@ export class PosVentaComponent {
       this.products.set([]);
     } catch (err: unknown) {
       console.error('Checkout error:', err);
-      const message = err instanceof Error ? err.message : 'Error desconocido';
       Swal.fire({
         title: 'Error al procesar',
-        text: message,
+        text: this.extractErrorMessage(err),
         icon: 'error',
         confirmButtonText: 'Intentar de nuevo',
       });
     }
+  }
+
+  /**
+   * Runs the checkout; when the backend rejects it with DISCOUNT_AUTHORIZATION_REQUIRED
+   * it asks an administrator for credentials, exchanges them for a single-use token and
+   * retries the same checkout with that token. The password is never persisted.
+   */
+  private async checkoutWithAuthorization(payload: CheckoutRequest): Promise<CheckoutResponse> {
+    try {
+      return await firstValueFrom(this.posService.checkout(payload));
+    } catch (err: unknown) {
+      if (!this.isDiscountAuthorizationRequired(err)) throw err;
+
+      // Close the loading dialog so the authorization modal is interactive.
+      void Swal.close();
+
+      const credentials = await this.openDiscountAuthorizationDialog();
+      if (!credentials) {
+        throw new Error(
+          'El administrador canceló la autorización. La venta no se completó.',
+        );
+      }
+
+      const authorization = await firstValueFrom(
+        this.posService.authorizeDiscount({
+          username: credentials.username,
+          password: credentials.password,
+          cashRegisterId: payload.cashRegisterId,
+        }),
+      );
+
+      return await firstValueFrom(
+        this.posService.checkout({
+          ...payload,
+          discountAuthorizationId: authorization.authorizationId,
+        }),
+      );
+    }
+  }
+
+  private openDiscountAuthorizationDialog(): Promise<DiscountAuthorizationCredentials | null> {
+    return new Promise((resolve) => {
+      this.dialog
+        .open<
+          DiscountAuthorizationDialogComponent,
+          undefined,
+          DiscountAuthorizationCredentials | null
+        >(DiscountAuthorizationDialogComponent, { disableClose: true, width: '440px' })
+        .afterClosed()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((result) => resolve(result ?? null));
+    });
+  }
+
+  private isDiscountAuthorizationRequired(err: unknown): boolean {
+    const error = err as { status?: number; error?: { errorCode?: string } } | null;
+    return error?.error?.errorCode === 'DISCOUNT_AUTHORIZATION_REQUIRED';
+  }
+
+  private extractErrorMessage(err: unknown): string {
+    if (err instanceof Error && err.message) return err.message;
+    const error = err as { error?: { message?: string } } | null;
+    return error?.error?.message ?? 'Error desconocido';
   }
 
   private async openPaymentDialog(

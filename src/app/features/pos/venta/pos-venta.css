@@ -682,3 +682,92 @@
   border-top: 1px solid var(--mat-sys-outline-variant);
   color: var(--mat-sys-primary) !important;
 }
+
+/* ── Line discount controls ── */
+.col-discount {
+  flex: 0 0 130px;
+  min-width: 130px;
+  justify-content: flex-start;
+}
+
+.line-discount {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.line-discount-type {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 12px;
+  background: #fff;
+  height: 28px;
+}
+
+.line-discount-value {
+  width: 56px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 12px;
+  height: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-discount-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e11d48;
+  white-space: nowrap;
+}
+
+/* ── Document discount controls ── */
+.totals-discount {
+  color: #e11d48;
+}
+
+.document-discount {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.doc-discount-label {
+  font-size: 12px;
+  color: #64748b;
+  flex: 1;
+}
+
+.doc-discount-type {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 4px;
+  font-size: 12px;
+  background: #fff;
+  height: 30px;
+}
+
+.doc-discount-value {
+  width: 80px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 4px;
+  font-size: 13px;
+  height: 30px;
+  font-variant-numeric: tabular-nums;
+}
+
+.document-discount-reason {
+  margin-bottom: 4px;
+}
+
+.doc-discount-reason {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  height: 30px;
+}

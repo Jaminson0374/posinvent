@@ -99,6 +99,14 @@
   flex: 0.8;
 }
 
+.qf-line-discount-type {
+  flex: 0.9;
+}
+
+.qf-line-discount-value {
+  flex: 0.8;
+}
+
 .qf-line-subtotal {
   flex: 1;
 }
