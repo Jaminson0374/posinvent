@@ -33,7 +33,14 @@ export interface SupplierInvoiceRequest {
   notes?: string | null;
 }
 
+/**
+ * Net supplier position.
+ * `netPosition = payableOutstanding - advanceBalance`:
+ * positive = we owe the supplier; negative = we have credit in our favor.
+ */
 export interface SupplierBalance {
   supplierId: string;
-  currentBalance: number;
+  payableOutstanding: number;
+  advanceBalance: number;
+  netPosition: number;
 }
