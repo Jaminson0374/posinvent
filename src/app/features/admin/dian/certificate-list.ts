@@ -28,7 +28,7 @@ export class CertificateListComponent {
   private readonly dialog = inject(MatDialog);
   readonly certificates = this.dianService.certificates;
 
-  readonly displayedColumns = ['name', 'validUntil', 'active', 'actions'];
+  readonly displayedColumns = ['alias', 'issuer', 'expirationDate', 'status', 'actions'];
 
   openUploadDialog(): void {
     const ref = this.dialog.open(CertificateUploadDialogComponent, { width: '400px' });
@@ -62,9 +62,9 @@ export class CertificateListComponent {
     });
   }
 
-  isExpiringSoon(validUntil: string): boolean {
+  isExpiringSoon(expirationDate: string): boolean {
     const daysLeft = Math.ceil(
-      (new Date(validUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      (new Date(expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
     );
     return daysLeft < 30;
   }

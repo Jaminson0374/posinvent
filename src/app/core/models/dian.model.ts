@@ -58,10 +58,12 @@ export interface DianSyncQueueItem {
 
 export interface DigitalCertificate {
   id: string;
-  name: string;
-  validUntil: string;
-  active: boolean;
-  createdAt: string;
+  alias: string;
+  issuer: string | null;
+  subject: string | null;
+  expirationDate: string;
+  status: 'ACTIVE' | 'INACTIVE';
+  uploadedAt: string;
 }
 
 export interface DianDashboardSummary {
