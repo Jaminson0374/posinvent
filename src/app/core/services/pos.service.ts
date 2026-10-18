@@ -15,6 +15,7 @@ export interface PaymentLine {
 export interface CheckoutRequest {
   orderId: string;
   cashRegisterId: string;
+  shiftId: string;
   payments: PaymentLine[];
   documentDiscountType?: DiscountType;
   documentDiscountValue?: number;
