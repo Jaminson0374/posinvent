@@ -45,7 +45,7 @@ export interface ThirdParty {
   active: boolean;
   creditDays: number;
   creditLimit: number;
-  currentBalance: number;
+  outstanding: number | null;
   priceListId: string | null;
   entryDate: string | null;
   contactName: string | null;

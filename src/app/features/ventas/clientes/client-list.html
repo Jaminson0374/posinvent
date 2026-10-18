@@ -67,9 +67,9 @@
       <mat-cell *matCellDef="let row">{{ row.creditDays }}</mat-cell>
     </ng-container>
 
-    <ng-container matColumnDef="currentBalance">
-      <mat-header-cell *matHeaderCellDef>Saldo actual</mat-header-cell>
-      <mat-cell *matCellDef="let row">{{ row.currentBalance | number: '1.0-0' }}</mat-cell>
+    <ng-container matColumnDef="outstanding">
+      <mat-header-cell *matHeaderCellDef>Saldo CxC</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{ (row.outstanding ?? 0) | number: '1.0-0' }}</mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="actions">

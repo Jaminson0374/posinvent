@@ -44,7 +44,7 @@ export class ClientListComponent implements OnInit {
     'phone',
     'creditLimit',
     'creditDays',
-    'currentBalance',
+    'outstanding',
     'actions',
   ];
   readonly pageSizeOptions = [10, 20, 30];
