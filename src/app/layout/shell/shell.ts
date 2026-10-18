@@ -57,7 +57,7 @@ export class ShellComponent {
       label: 'Dashboard',
       icon: 'dashboard',
       route: '/dashboard',
-      roles: ['ADMIN', 'CAJERO', 'CARNICERO', 'AUXILIAR', 'CONTADOR'],
+      roles: ['ADMIN', 'CONTADOR'],
       children: [],
     },
     {

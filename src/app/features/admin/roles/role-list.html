@@ -1,6 +1,9 @@
 <div class="rl-page">
   <h2 class="rl-title">Roles del sistema</h2>
-  <p class="rl-subtitle">Cada rol define los permisos de acceso a los módulos del sistema.</p>
+  <p class="rl-subtitle">
+    Los roles del sistema son un catálogo fijo; se asignan a los usuarios desde
+    Administración > Usuarios.
+  </p>
 
   @if (loading()) {
     <div class="rl-loading">
@@ -19,30 +22,9 @@
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="permissions">
-        <th mat-header-cell *matHeaderCellDef>Permisos</th>
-        <td mat-cell *matCellDef="let row">
-          <code class="rl-permissions">{{ formatPermissions(row.permissions) }}</code>
-        </td>
-      </ng-container>
-
       <ng-container matColumnDef="createdAt">
         <th mat-header-cell *matHeaderCellDef>Creado</th>
         <td mat-cell *matCellDef="let row">{{ row.createdAt | date: 'medium' }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef></th>
-        <td mat-cell *matCellDef="let row">
-          <button
-            mat-icon-button
-            color="primary"
-            (click)="openEditDialog(row)"
-            matTooltip="Editar permisos"
-          >
-            <mat-icon>edit</mat-icon>
-          </button>
-        </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

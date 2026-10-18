@@ -11,8 +11,4 @@ export class RoleService {
   listAll(): Observable<RoleResponse[]> {
     return this.http.get<RoleResponse[]>(this.base);
   }
-
-  update(id: string, permissions: string): Observable<RoleResponse> {
-    return this.http.put<RoleResponse>(`${this.base}/${id}`, { permissions });
-  }
 }
