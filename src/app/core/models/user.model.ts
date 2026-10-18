@@ -48,7 +48,6 @@ export interface RoleSummary {
 export interface RoleResponse {
   id: string;
   name: string;
-  permissions: string;
   createdAt: string;
 }
 

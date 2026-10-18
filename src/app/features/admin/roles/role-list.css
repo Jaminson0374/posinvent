@@ -34,11 +34,3 @@
 .rl-table {
   width: 100%;
 }
-
-.rl-permissions {
-  margin: 0;
-  font-size: 0.8rem;
-  white-space: pre-wrap;
-  color: #475569;
-  line-height: 1.4;
-}
