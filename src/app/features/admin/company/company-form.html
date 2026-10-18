@@ -241,7 +241,7 @@
           <mat-select formControlName="certificateId">
             <mat-option [value]="''">— Sin certificado —</mat-option>
             @for (cert of certificates.value() ?? []; track cert.id) {
-              <mat-option [value]="cert.id">{{ cert.name }}</mat-option>
+              <mat-option [value]="cert.id">{{ cert.alias }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
