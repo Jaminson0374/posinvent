@@ -21,6 +21,8 @@ import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.ser
 import { ProductCatalogCategoryService } from '../../../core/services/product-catalog-category.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { CashRegisterService } from '../../../core/services/cash-register.service';
+import { ShiftService } from '../../../core/services/shift.service';
+import { Shift } from '../../../core/models/shift.model';
 import { PosService } from '../../../core/services/pos.service';
 import { SaleService } from '../../../core/services/sale.service';
 import { PosVentaComponent } from './pos-venta';
@@ -97,6 +99,19 @@ const UND_UNIT: UnitOfMeasure = {
   active: true,
 };
 
+const OPEN_SHIFT: Shift = {
+  id: 'shift-1',
+  cashRegisterId: 'cr-1',
+  userId: 'user-1',
+  openingTime: '2026-01-01T00:00:00Z',
+  closingTime: null,
+  openingAmount: 0,
+  closingAmount: null,
+  status: 'OPEN',
+  zReportUrl: null,
+  createdAt: '2026-01-01T00:00:00Z',
+};
+
 describe('PosVentaComponent — weight capture', () => {
   let fixture: ComponentFixture<PosVentaComponent>;
   let component: PosVentaComponent;
@@ -151,6 +166,7 @@ describe('PosVentaComponent — weight capture', () => {
     };
     const warehouseService = { listAll: () => of([]) };
     const cashRegisterService = { listActive: () => of([]) };
+    const shiftService = { getActive: () => of(OPEN_SHIFT) };
     const posService = {
       searchProducts: () =>
         of({ content: [], totalElements: 0, totalPages: 0, page: 0, size: 0, last: true }),
@@ -166,6 +182,7 @@ describe('PosVentaComponent — weight capture', () => {
         { provide: ProductCatalogCategoryService, useValue: categoryService },
         { provide: WarehouseService, useValue: warehouseService },
         { provide: CashRegisterService, useValue: cashRegisterService },
+        { provide: ShiftService, useValue: shiftService },
         { provide: PosService, useValue: posService },
         { provide: SaleService, useValue: {} },
       ],
@@ -361,6 +378,7 @@ describe('PosVentaComponent — discounts', () => {
     };
     const warehouseService = { listAll: () => of([{ id: 'wh-1', warehouseType: 'GENERAL', active: true }]) };
     const cashRegisterService = { listActive: () => of([{ id: 'cr-1', active: true }]) };
+    const shiftService = { getActive: () => of(OPEN_SHIFT) };
     const scaleService = {
       currentReading: signal<ScaleReading | null>(null),
       status: signal<ScaleStatus>(SCALE_STATUS.DISCONNECTED),
@@ -381,6 +399,7 @@ describe('PosVentaComponent — discounts', () => {
         { provide: ProductCatalogCategoryService, useValue: categoryService },
         { provide: WarehouseService, useValue: warehouseService },
         { provide: CashRegisterService, useValue: cashRegisterService },
+        { provide: ShiftService, useValue: shiftService },
         { provide: PosService, useValue: posService },
         { provide: SaleService, useValue: saleService },
       ],

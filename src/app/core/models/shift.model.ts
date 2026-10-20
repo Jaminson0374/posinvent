@@ -9,6 +9,8 @@ export interface Shift {
   cashRegisterName?: string;
   userId: string;
   userName?: string;
+  assignedTo?: string | null;
+  closedBy?: string | null;
   openingTime: string;
   closingTime: string | null;
   openingAmount: number;
@@ -21,6 +23,7 @@ export interface Shift {
 export interface ShiftRequest {
   cashRegisterId: string;
   openingAmount?: number;
+  assignedTo?: string;
 }
 
 export interface CashCountRequest {

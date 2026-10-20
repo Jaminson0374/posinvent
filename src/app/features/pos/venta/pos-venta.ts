@@ -43,8 +43,10 @@ import { UnitOfMeasureService } from '../../../core/services/unit-of-measure.ser
 import { ProductCatalogCategoryService } from '../../../core/services/product-catalog-category.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { CashRegisterService } from '../../../core/services/cash-register.service';
+import { ShiftService } from '../../../core/services/shift.service';
 import { Warehouse } from '../../../core/models/warehouse.model';
 import { CashRegister } from '../../../core/models/cash-register.model';
+import { Shift } from '../../../core/models/shift.model';
 import { PageResponse } from '../../../core/models/page.model';
 import { QuickCreateClientDialogComponent } from '../../admin/third-parties/dialogs/quick-create-client.dialog';
 import { ScaleConfigDialogComponent } from './scale-config-dialog';
@@ -101,6 +103,7 @@ export class PosVentaComponent {
   private readonly categoryService = inject(ProductCatalogCategoryService);
   private readonly warehouseService = inject(WarehouseService);
   private readonly cashRegisterService = inject(CashRegisterService);
+  private readonly shiftService = inject(ShiftService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   readonly categoryOptions = computed(() => {
@@ -166,6 +169,7 @@ export class PosVentaComponent {
   // ── POS infrastructure ──
   readonly selectedWarehouse = signal<Warehouse | null>(null);
   readonly selectedCashRegister = signal<CashRegister | null>(null);
+  readonly activeShift = signal<Shift | null>(null);
   readonly infrastructureError = signal<string | null>(null);
 
   // ── Computed totals (discount BEFORE IVA, prorated document discount) ──
@@ -298,7 +302,9 @@ export class PosVentaComponent {
 
     this.cashRegisterService.listActive().subscribe({
       next: (registers) => {
-        this.selectedCashRegister.set(registers.length > 0 ? registers[0] : null);
+        const register = registers.length > 0 ? registers[0] : null;
+        this.selectedCashRegister.set(register);
+        this.loadActiveShift(register?.id ?? null);
       },
       error: () => this.infrastructureError.set('No se pudo cargar la caja registradora'),
     });
@@ -333,6 +339,19 @@ export class PosVentaComponent {
         this.products.set([]);
         this.searchLoading.set(false);
       },
+    });
+  }
+
+  /** Loads the open shift of the selected register; a 404 means there is none. */
+  private loadActiveShift(cashRegisterId: string | null): void {
+    if (!cashRegisterId) {
+      this.activeShift.set(null);
+      return;
+    }
+
+    this.shiftService.getActive(cashRegisterId).subscribe({
+      next: (shift) => this.activeShift.set(shift.status === 'OPEN' ? shift : null),
+      error: () => this.activeShift.set(null),
     });
   }
 
@@ -862,6 +881,18 @@ export class PosVentaComponent {
       return;
     }
 
+    // A sale always belongs to an open shift; do not open the payment dialog without one.
+    const shift = this.activeShift();
+    if (!shift || shift.status !== 'OPEN') {
+      Swal.fire({
+        title: 'Sin turno abierto',
+        text: 'No hay un turno abierto. Abrí un turno en Caja antes de vender.',
+        icon: 'warning',
+        confirmButtonText: 'Entendido',
+      });
+      return;
+    }
+
     // Ask for payment details (split payment + change for cash)
     const grandTotal = this.grandTotal();
     const paymentResult = await this.openPaymentDialog(grandTotal);
@@ -898,6 +929,8 @@ export class PosVentaComponent {
           type: 'ORDER',
           clientId: customer.id,
           warehouseId,
+          shiftId: shift.id,
+          cashRegisterId,
         })
         .toPromise()!;
 
@@ -925,6 +958,7 @@ export class PosVentaComponent {
       const result = await this.checkoutWithAuthorization({
         orderId: docId,
         cashRegisterId,
+        shiftId: shift.id,
         payments: paymentResult.lines,
         documentDiscountType: this.documentDiscountType(),
         documentDiscountValue: this.documentDiscountValue(),
