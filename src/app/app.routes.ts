@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { adminGuard } from './core/auth/admin.guard';
+import { salesDocumentOperateGuard } from './core/auth/sales-document-operate.guard';
 
 export const routes: Routes = [
   {
@@ -357,6 +358,7 @@ export const routes: Routes = [
               },
               {
                 path: ':id',
+                canActivate: [salesDocumentOperateGuard],
                 loadComponent: () =>
                   import('./features/pos/cotizaciones/quote-form').then(
                     (m) => m.QuoteFormComponent,

@@ -13,7 +13,12 @@ import { CommonModule, DatePipe, DecimalPipe, CurrencyPipe } from '@angular/comm
 import { SaleService } from '../../../core/services/sale.service';
 import { ElectronicInvoiceService } from '../../../core/services/electronic-invoice.service';
 import { STATUS_LABELS, type ElectronicInvoice } from '../../../core/models/dian.model';
-import type { SalesDocument, SalesDocumentStatus } from '../../../core/models/sale.model';
+import type {
+  SalesDocument,
+  SalesDocumentStatus,
+} from '../../../core/models/sale.model';
+import { allowedSalesTransitions } from '../../../core/domain/sales-transition';
+import { CanOperateDocumentDirective } from '../../../shared/directives/can-operate-document.directive';
 import Swal from 'sweetalert2';
 
 interface TransitionState {
@@ -22,6 +27,21 @@ interface TransitionState {
   color: string;
   icon: string;
 }
+
+/** Presentation metadata for each target status the transition matrix can produce. */
+const TRANSITION_META: Record<SalesDocumentStatus, Omit<TransitionState, 'target'>> = {
+  DRAFT: { label: 'Borrador', color: '', icon: 'edit_note' },
+  SENT: { label: 'Enviar', color: 'primary', icon: 'send' },
+  ACCEPTED: { label: 'Aceptar', color: 'primary', icon: 'check_circle' },
+  REJECTED: { label: 'Rechazar', color: 'warn', icon: 'cancel' },
+  EXPIRED: { label: 'Expirada', color: '', icon: 'timer_off' },
+  CONFIRMED: { label: 'Confirmar', color: 'primary', icon: 'check_circle' },
+  PARTIALLY_INVOICED: { label: 'Facturar parcial', color: 'primary', icon: 'receipt_long' },
+  INVOICED: { label: 'Facturar', color: 'primary', icon: 'receipt' },
+  ISSUED: { label: 'Emitir', color: 'primary', icon: 'publish' },
+  PAID: { label: 'Pagar', color: 'primary', icon: 'payments' },
+  CANCELLED: { label: 'Cancelar', color: 'warn', icon: 'cancel' },
+};
 
 @Component({
   selector: 'app-sales-document-detail',
@@ -38,6 +58,7 @@ interface TransitionState {
     DatePipe,
     DecimalPipe,
     CurrencyPipe,
+    CanOperateDocumentDirective,
   ],
   templateUrl: './sales-document-detail.html',
   styleUrl: './sales-document-detail.css',
@@ -94,53 +115,14 @@ export class SalesDocumentDetailComponent implements OnInit {
     return (doc.totalTax0 || 0) + (doc.totalTax5 || 0) + (doc.totalTax19 || 0);
   });
 
-  readonly availableTransitions = computed(() => {
+  readonly availableTransitions = computed<TransitionState[]>(() => {
     const doc = this.document();
     if (!doc) return [];
 
-    const transitions: TransitionState[] = [];
-    const type = doc.type;
-    const status = doc.status;
-
-    if (type === 'QUOTE') {
-      if (status === 'DRAFT') {
-        transitions.push({ target: 'SENT', label: 'Enviar', color: 'primary', icon: 'send' });
-      }
-      if (status === 'SENT') {
-        transitions.push({
-          target: 'ACCEPTED',
-          label: 'Aceptar',
-          color: 'primary',
-          icon: 'check_circle',
-        });
-        transitions.push({ target: 'REJECTED', label: 'Rechazar', color: 'warn', icon: 'cancel' });
-        transitions.push({ target: 'EXPIRED', label: 'Expirada', color: '', icon: 'timer_off' });
-      }
-    } else if (type === 'ORDER') {
-      if (status === 'DRAFT') {
-        transitions.push({
-          target: 'CONFIRMED',
-          label: 'Confirmar',
-          color: 'primary',
-          icon: 'check_circle',
-        });
-      }
-      if (status === 'DRAFT' || status === 'CONFIRMED') {
-        transitions.push({ target: 'CANCELLED', label: 'Cancelar', color: 'warn', icon: 'cancel' });
-      }
-    } else if (type === 'INVOICE') {
-      if (status === 'DRAFT') {
-        transitions.push({ target: 'ISSUED', label: 'Emitir', color: 'primary', icon: 'publish' });
-      }
-      if (status === 'ISSUED') {
-        transitions.push({ target: 'PAID', label: 'Pagar', color: 'primary', icon: 'payments' });
-      }
-      if (status === 'ISSUED') {
-        transitions.push({ target: 'CANCELLED', label: 'Anular', color: 'warn', icon: 'cancel' });
-      }
-    }
-
-    return transitions;
+    return allowedSalesTransitions(doc.type, doc.status).map((target) => ({
+      target,
+      ...TRANSITION_META[target],
+    }));
   });
 
   ngOnInit(): void {
