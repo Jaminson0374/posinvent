@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatePipe } from '@angular/common';
 import { LogisticsService } from '../../../core/services/logistics.service';
+import { CanOperateReceiptDirective } from '../../../shared/directives/can-operate-receipt.directive';
 import type { ReceiptResponse, ReceiptStatus } from '../../../core/models/logistics.model';
 
 const STATUS_COLORS: Record<ReceiptStatus, string> = {
@@ -29,6 +30,7 @@ const STATUS_COLORS: Record<ReceiptStatus, string> = {
     MatChipsModule,
     MatProgressSpinnerModule,
     DatePipe,
+    CanOperateReceiptDirective,
   ],
   templateUrl: './receipt-list.html',
   styleUrl: './receipt-list.css',

@@ -1,7 +1,9 @@
 <div class="page-container">
   <div class="page-header">
     <h2>Recepciones</h2>
-    <a mat-flat-button routerLink="nuevo"> <mat-icon>add</mat-icon> Nueva recepción </a>
+    <a *canOperateReceipt="null" mat-flat-button routerLink="nuevo">
+      <mat-icon>add</mat-icon> Nueva recepción
+    </a>
   </div>
 
   <mat-table [dataSource]="data()" [class.loading]="loading()">

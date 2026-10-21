@@ -10,6 +10,7 @@ import type { PageEvent } from '@angular/material/paginator';
 
 import { TransferListComponent } from './transfer-list';
 import { TransferService } from '../../../core/services/transfer.service';
+import { WarehouseAccessService } from '../../../core/services/warehouse-access.service';
 import type { TransferResponse, TransferItemResponse } from '../../../core/models/transfer.model';
 
 function createTransfer(overrides: Partial<TransferResponse> = {}): TransferResponse {
@@ -59,6 +60,10 @@ describe('TransferListComponent', () => {
     getById: vi.fn(),
   };
 
+  const warehouseAccessService = {
+    canOperateTransfer: vi.fn(),
+  };
+
   afterEach(() => {
     TestBed.resetTestingModule();
   });
@@ -67,6 +72,7 @@ describe('TransferListComponent', () => {
     transferService.list.mockReturnValue(of(page));
     transferService.confirm.mockReturnValue(of(createTransfer({ status: 'CONFIRMED' })));
     transferService.cancel.mockReturnValue(of(createTransfer({ status: 'CANCELLED' })));
+    warehouseAccessService.canOperateTransfer.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [TransferListComponent, NoopAnimationsModule],
@@ -75,6 +81,7 @@ describe('TransferListComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: TransferService, useValue: transferService },
+        { provide: WarehouseAccessService, useValue: warehouseAccessService },
       ],
     }).compileComponents();
 
