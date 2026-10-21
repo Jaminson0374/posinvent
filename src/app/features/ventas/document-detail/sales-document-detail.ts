@@ -236,8 +236,17 @@ export class SalesDocumentDetailComponent implements OnInit {
   friendlyError(error: ProviderError): string {
     const code = (error.code ?? '').toLowerCase();
     const params = (error.params ?? []).join(' ').toLowerCase();
-    if (code.includes('postal') || params.includes('postal_code')) {
+    const message = (error.message ?? '').toLowerCase();
+    if (
+      code.includes('postal') ||
+      params.includes('postal_code') ||
+      message.includes('código postal') ||
+      message.includes('codigo postal')
+    ) {
       return 'El código postal del cliente es inválido o no existe en la tabla DIAN.';
+    }
+    if (code.includes('tax_responsibility') || message.includes('responsabilidad fiscal')) {
+      return 'La responsabilidad fiscal del cliente no es válida para su tipo de persona.';
     }
     if (code.includes('identification') || params.includes('identification')) {
       return 'La identificación fiscal del cliente no es válida.';
