@@ -36,6 +36,31 @@ describe('SalesDocumentDetailComponent', () => {
     });
   });
 
+  it('renders a friendly message for a provider postal-code rejection', () => {
+    const component = TestBed.createComponent(SalesDocumentDetailComponent).componentInstance;
+
+    expect(
+      component.friendlyError({
+        code: 'invalid_postal_code',
+        message: 'raw provider message',
+        params: ['customer.address.postal_code'],
+        detail: null,
+      }),
+    ).toContain('código postal');
+  });
+
+  it('navigates to the client form to correct fiscal data', () => {
+    const component = TestBed.createComponent(SalesDocumentDetailComponent).componentInstance;
+    component.document.set({
+      id: 'doc-1',
+      clientId: 'client-1',
+    } as never);
+
+    component.correctClientData();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/ventas/clientes', 'client-1']);
+  });
+
   it('redirects a 403 document load to the sales list instead of showing a broken detail', () => {
     saleService.getDocument.mockReturnValue(
       throwError(() => new HttpErrorResponse({ status: 403 })),

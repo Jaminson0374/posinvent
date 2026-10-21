@@ -33,6 +33,13 @@ export const ELECTRONIC_INVOICE_STATUS = {
 export type ElectronicInvoiceStatus =
   (typeof ELECTRONIC_INVOICE_STATUS)[keyof typeof ELECTRONIC_INVOICE_STATUS];
 
+export interface ProviderError {
+  code: string;
+  message: string | null;
+  params: string[];
+  detail: string | null;
+}
+
 export interface ElectronicInvoice {
   id: string;
   salesDocumentId: string;
@@ -43,6 +50,10 @@ export interface ElectronicInvoice {
   sentAt: string | null;
   responseAt: string | null;
   createdAt: string;
+  providerInvoiceId?: string | null;
+  pdfUrl?: string | null;
+  xmlUrl?: string | null;
+  errors?: ProviderError[];
 }
 
 export interface DianSyncQueueItem {

@@ -12,7 +12,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule, DatePipe, DecimalPipe, CurrencyPipe } from '@angular/common';
 import { SaleService } from '../../../core/services/sale.service';
 import { ElectronicInvoiceService } from '../../../core/services/electronic-invoice.service';
-import { STATUS_LABELS, type ElectronicInvoice } from '../../../core/models/dian.model';
+import {
+  STATUS_LABELS,
+  type ElectronicInvoice,
+  type ProviderError,
+} from '../../../core/models/dian.model';
 import type {
   SalesDocument,
   SalesDocumentStatus,
@@ -76,6 +80,9 @@ export class SalesDocumentDetailComponent implements OnInit {
   readonly error = signal<string | null>(null);
   readonly transitioning = signal(false);
   readonly electronicInvoice = signal<ElectronicInvoice | null>(null);
+  readonly providerErrors = computed<ProviderError[]>(
+    () => this.electronicInvoice()?.errors ?? [],
+  );
 
   readonly typeLabels: Record<string, string> = {
     QUOTE: 'Cotización',
@@ -224,6 +231,30 @@ export class SalesDocumentDetailComponent implements OnInit {
       showCloseButton: true,
       showConfirmButton: false,
     });
+  }
+
+  friendlyError(error: ProviderError): string {
+    const code = (error.code ?? '').toLowerCase();
+    const params = (error.params ?? []).join(' ').toLowerCase();
+    if (code.includes('postal') || params.includes('postal_code')) {
+      return 'El código postal del cliente es inválido o no existe en la tabla DIAN.';
+    }
+    if (code.includes('identification') || params.includes('identification')) {
+      return 'La identificación fiscal del cliente no es válida.';
+    }
+    if (code.includes('total_payments') || params.includes('payments')) {
+      return 'Los medios de pago no cuadran con el total de la factura.';
+    }
+    if (code.includes('tax') || params.includes('tax')) {
+      return 'La base gravable o el impuesto de una línea no cuadra con el total.';
+    }
+    return error.message || 'Siigo rechazó la factura por una regla fiscal.';
+  }
+
+  correctClientData(): void {
+    const clientId = this.document()?.clientId;
+    if (!clientId) return;
+    this.router.navigate(['/ventas/clientes', clientId]);
   }
 
   retryDian(): void {
