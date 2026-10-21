@@ -54,6 +54,7 @@ import {
   normalizeDiscountType,
   roundHalfUp2,
 } from '../../../core/domain/discount';
+import { allowedSalesTransitions } from '../../../core/domain/sales-transition';
 import { PageResponse } from '../../../core/models/page.model';
 import { QuickCreateClientDialogComponent } from '../../admin/third-parties/dialogs/quick-create-client.dialog';
 import Swal from 'sweetalert2';
@@ -654,24 +655,17 @@ export class QuoteFormComponent implements OnInit {
   private getTransitions(
     status: SalesDocumentStatus,
   ): Array<{ status: SalesDocumentStatus; label: string }> {
-    switch (status) {
-      case 'DRAFT':
-        return [{ status: 'SENT', label: 'Enviar' }];
-      case 'SENT':
-        return [
-          { status: 'ACCEPTED', label: 'Aceptar' },
-          { status: 'REJECTED', label: 'Rechazar' },
-        ];
-      case 'ACCEPTED':
-        return [
-          { status: 'CONFIRMED', label: 'Confirmar' },
-          { status: 'CANCELLED', label: 'Cancelar' },
-        ];
-      case 'CONFIRMED':
-        return [{ status: 'CANCELLED', label: 'Cancelar' }];
-      default:
-        return [];
-    }
+    const labels: Partial<Record<SalesDocumentStatus, string>> = {
+      SENT: 'Enviar',
+      ACCEPTED: 'Aceptar',
+      REJECTED: 'Rechazar',
+      EXPIRED: 'Expirar',
+    };
+
+    return allowedSalesTransitions('QUOTE', status).map((target) => ({
+      status: target,
+      label: labels[target] ?? this.statusLabel(target),
+    }));
   }
 
   statusLabel(status: string): string {

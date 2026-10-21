@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, inject, OnInit, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { debounceTime, distinctUntilChanged, startWith } from 'rxjs';
 import { SaleService } from '../../../core/services/sale.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import type { SalesDocumentType, SalesDocumentStatus } from '../../../core/models/sale.model';
 
 @Component({
@@ -40,7 +41,11 @@ export class SalesDocumentListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(AuthService);
   readonly service = inject(SaleService);
+
+  /** CONTADOR is read-only: creation is not offered. Row/detail actions stay available. */
+  readonly isContador = computed(() => this.auth.userRole() === 'CONTADOR');
 
   readonly displayedColumns = [
     'index',

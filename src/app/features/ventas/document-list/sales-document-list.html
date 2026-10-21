@@ -28,7 +28,9 @@
       }
     </mat-select>
 
-    <button mat-flat-button (click)="openNew()"><mat-icon>add</mat-icon> Nuevo</button>
+    @if (!isContador()) {
+      <button mat-flat-button (click)="openNew()"><mat-icon>add</mat-icon> Nuevo</button>
+    }
   </div>
 </div>
 

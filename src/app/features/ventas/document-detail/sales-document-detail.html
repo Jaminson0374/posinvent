@@ -67,6 +67,7 @@
             @if (ei.status === 'PENDING_SEND' || ei.status === 'REJECTED_BY_DIAN') {
               <button
                 mat-icon-button
+                *canOperateDocument="doc"
                 (click)="retryDian()"
                 matTooltip="Reintentar envío DIAN"
                 class="!w-8 !h-8"
@@ -93,6 +94,7 @@
         @for (t of availableTransitions(); track t.target) {
           <button
             mat-raised-button
+            *canOperateDocument="doc"
             [color]="t.color"
             [disabled]="transitioning()"
             (click)="transition(t.target)"
@@ -105,7 +107,12 @@
           <button mat-stroked-button (click)="viewCxc()">
             <mat-icon>receipt_long</mat-icon> Ver CxC
           </button>
-          <button mat-stroked-button color="accent" (click)="createReceipt()">
+          <button
+            mat-stroked-button
+            color="accent"
+            *canOperateDocument="doc"
+            (click)="createReceipt()"
+          >
             <mat-icon>payments</mat-icon> Generar recibo
           </button>
         }
