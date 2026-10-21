@@ -2,6 +2,10 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { adminGuard } from './core/auth/admin.guard';
 import { salesDocumentOperateGuard } from './core/auth/sales-document-operate.guard';
+import {
+  receiptCreateGuard,
+  transferCreateGuard,
+} from './core/auth/warehouse-create.guard';
 
 export const routes: Routes = [
   {
@@ -48,6 +52,7 @@ export const routes: Routes = [
               },
               {
                 path: 'nuevo',
+                canActivate: [receiptCreateGuard],
                 loadComponent: () =>
                   import('./features/logistica/recepcion/receipt-form').then(
                     (m) => m.ReceiptFormComponent,
@@ -436,6 +441,7 @@ export const routes: Routes = [
               },
               {
                 path: 'nuevo',
+                canActivate: [transferCreateGuard],
                 loadComponent: () =>
                   import('./features/inventario/transfers/transfer-form').then(
                     (m) => m.TransferFormComponent,
