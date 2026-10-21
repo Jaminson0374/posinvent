@@ -20,10 +20,13 @@ export const salesDocumentOperateGuard: CanActivateFn = (route) => {
   const router = inject(Router);
 
   const readOnlyDetail = () => router.createUrlTree(['/ventas/documentos', id]);
+  // A failed read (e.g. 403 because the document belongs to another cashier) must not
+  // leave the user on a broken detail screen; send them back to the list.
+  const salesList = () => router.createUrlTree(['/ventas/documentos']);
 
   return saleService.getDocument(id).pipe(
     switchMap((document): Observable<boolean> => permissions.canOperate(document)),
     map((canOperate) => (canOperate ? true : readOnlyDetail())),
-    catchError(() => of(readOnlyDetail())),
+    catchError(() => of(salesList())),
   );
 };

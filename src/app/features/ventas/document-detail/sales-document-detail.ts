@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
@@ -144,6 +144,11 @@ export class SalesDocumentDetailComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
+        if (err instanceof HttpErrorResponse && err.status === 403) {
+          this.loading.set(false);
+          this.router.navigate(['/ventas/documentos']);
+          return;
+        }
         this.error.set(err?.error?.message || 'Error al cargar el documento');
         this.loading.set(false);
       },

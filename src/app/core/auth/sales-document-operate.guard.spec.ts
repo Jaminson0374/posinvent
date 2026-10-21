@@ -1,5 +1,6 @@
 import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ActivatedRouteSnapshot,
   Router,
@@ -111,8 +112,10 @@ describe('salesDocumentOperateGuard', () => {
     expect(router.serializeUrl(tree as UrlTree)).toBe('/ventas/documentos/doc-1');
   });
 
-  it('redirects to the read-only detail when loading the document fails', async () => {
-    saleService.getDocument.mockReturnValue(throwError(() => new Error('boom')));
+  it('redirects to the sales list when loading the document fails with 403', async () => {
+    saleService.getDocument.mockReturnValue(
+      throwError(() => new HttpErrorResponse({ status: 403 })),
+    );
 
     const result = TestBed.runInInjectionContext(() =>
       salesDocumentOperateGuard(routeWithId('doc-1'), state),
@@ -121,6 +124,6 @@ describe('salesDocumentOperateGuard', () => {
     const tree = await firstValueFrom(result as never);
 
     expect(tree).toBeInstanceOf(UrlTree);
-    expect(router.serializeUrl(tree as UrlTree)).toBe('/ventas/documentos/doc-1');
+    expect(router.serializeUrl(tree as UrlTree)).toBe('/ventas/documentos');
   });
 });
