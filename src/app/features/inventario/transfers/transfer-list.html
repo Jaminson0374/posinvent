@@ -1,7 +1,12 @@
 <div class="tl-page">
   <div class="tl-header">
     <h2 class="tl-title">Traslados entre Bodegas</h2>
-    <a mat-flat-button color="primary" routerLink="/inventario/traslados/nuevo">
+    <a
+      *canOperateTransfer="{ operation: 'create' }"
+      mat-flat-button
+      color="primary"
+      routerLink="/inventario/traslados/nuevo"
+    >
       <mat-icon>add</mat-icon>
       Nuevo traslado
     </a>
@@ -56,6 +61,7 @@
           <mat-cell *matCellDef="let r">
             @if (r.status === 'DRAFT') {
               <button
+                *canOperateTransfer="{ transfer: r, operation: 'confirm' }"
                 mat-icon-button
                 color="primary"
                 (click)="confirm(r.id)"
@@ -63,7 +69,13 @@
               >
                 <mat-icon>check_circle</mat-icon>
               </button>
-              <button mat-icon-button color="warn" (click)="cancel(r.id)" matTooltip="Cancelar">
+              <button
+                *canOperateTransfer="{ transfer: r, operation: 'cancel' }"
+                mat-icon-button
+                color="warn"
+                (click)="cancel(r.id)"
+                matTooltip="Cancelar"
+              >
                 <mat-icon>cancel</mat-icon>
               </button>
             }

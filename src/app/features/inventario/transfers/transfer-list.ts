@@ -8,6 +8,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink, Router } from '@angular/router';
 import { TransferService } from '../../../core/services/transfer.service';
+import { CanOperateTransferDirective } from '../../../shared/directives/can-operate-transfer.directive';
 import type {
   TransferResponse,
   TransferPage,
@@ -27,6 +28,7 @@ import type {
     MatPaginatorModule,
     MatProgressSpinnerModule,
     RouterLink,
+    CanOperateTransferDirective,
   ],
   templateUrl: './transfer-list.html',
   styles: [
