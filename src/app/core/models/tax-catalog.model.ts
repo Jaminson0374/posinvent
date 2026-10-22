@@ -17,6 +17,22 @@ export interface FiscalResponsibility {
 export interface Tax {
   id: string;
   code: string;
-  name: string;
+  description: string;
+  percentage: number;
+  observation: string | null;
+  dianCode: string | null;
+  siigoTaxId: string | null;
   sortOrder: number;
+  active: boolean;
+}
+
+export interface TaxRequest {
+  code: string;
+  description: string;
+  percentage: number;
+  observation: string | null;
+  dianCode: string | null;
+  siigoTaxId: string | null;
+  sortOrder: number;
+  active: boolean;
 }

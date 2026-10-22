@@ -203,7 +203,7 @@
           <mat-label>Impuestos y Retenciones</mat-label>
           <mat-select formControlName="taxCodes" multiple>
             @for (t of taxes(); track t.code) {
-              <mat-option [value]="t.code">{{ t.name }}</mat-option>
+              <mat-option [value]="t.code">{{ t.description }}</mat-option>
             }
           </mat-select>
         </mat-form-field>

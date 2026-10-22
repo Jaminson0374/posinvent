@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { IdentificationType } from '../models/identification-type.model';
 import { Department, City } from '../models/department.model';
 import { CiiuActivity } from '../models/ciiu.model';
-import { FiscalResponsibility, Tax, TaxResponsibility } from '../models/tax-catalog.model';
+import { FiscalResponsibility, Tax, TaxRequest, TaxResponsibility } from '../models/tax-catalog.model';
 
 export interface IdentificationTypeRequest {
   code: string;
@@ -46,6 +46,14 @@ export class CatalogService {
 
   createIdentificationType(request: IdentificationTypeRequest): Observable<IdentificationType> {
     return this.http.post<IdentificationType>('/api/v1/catalog/identification-types', request);
+  }
+
+  createTax(request: TaxRequest): Observable<Tax> {
+    return this.http.post<Tax>('/api/v1/taxes', request);
+  }
+
+  reloadTaxes(): void {
+    this.taxes.reload();
   }
 
   reloadIdentificationTypes(): void {

@@ -219,7 +219,11 @@
               categoryDisplay: categoryDisplay,
               groupDisplay: groupDisplay,
               uomDisplay: uomDisplay,
+              taxDisplay: taxDisplay,
             }"
+            [taxOptions]="taxOptions()"
+            [canCreateTax]="isEditing()"
+            (createTaxRequested)="openCreateTax($event)"
           >
             <!-- Classification autocomplete projected into card 2 slot -->
             <ng-container classification>

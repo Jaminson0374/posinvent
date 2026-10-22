@@ -63,6 +63,7 @@ import { ProductAccountingComponent } from './components/product-accounting/prod
 import { ProductSuppliersComponent } from './components/product-suppliers/product-suppliers';
 import { ProductService } from '../../../../core/services/product.service';
 import { ProductTypeService } from '../../../../core/services/product-type.service';
+import { CatalogService } from '../../../../core/services/catalog.service';
 import { ProductStateService } from '../../../../core/services/product-state.service';
 import { BrandService } from '../../../../core/services/brand.service';
 import { ProductModelService } from '../../../../core/services/product-model.service';
@@ -120,6 +121,8 @@ import {
   QuickCreateWarehouseLocationData,
 } from '../dialogs/quick-create-warehouse-location.dialog';
 import { QuickCreateSupplierDialogComponent } from '../dialogs/quick-create-supplier.dialog';
+import { QuickCreateTaxDialogComponent, QuickCreateTaxData } from '../dialogs/quick-create-tax.dialog';
+import type { Tax } from '../../../../core/models/tax-catalog.model';
 import {
   ProductType,
   ProductState,
@@ -193,6 +196,7 @@ export class ProductFormComponent implements OnInit {
   readonly catCategoryService = inject(ProductCatalogCategoryService);
   readonly groupService = inject(ProductGroupService);
   readonly uomService = inject(UnitOfMeasureService);
+  readonly catalogService = inject(CatalogService);
   readonly priceListService = inject(PriceListService);
   readonly pucService = inject(PucAccountService);
   readonly templateService = inject(AccountingTemplateService);
@@ -245,6 +249,7 @@ export class ProductFormComponent implements OnInit {
   readonly categoryDisplay = new FormControl('');
   readonly groupDisplay = new FormControl('');
   readonly uomDisplay = new FormControl('');
+  readonly taxDisplay = new FormControl('');
   readonly priceListSearch = new FormControl('', { nonNullable: true });
 
   // ── Autocomplete filter signals ───────────────────────────────────
@@ -423,13 +428,16 @@ export class ProductFormComponent implements OnInit {
 
   private formatTaxDisplay(taxType: string | null): string {
     if (!taxType) return 'Exento';
-    return taxType === 'EXENTO'
-      ? 'Exento'
-      : taxType === 'IVA_5'
-        ? 'IVA 5%'
-        : taxType === 'IVA_19'
-          ? 'IVA 19%'
-          : taxType;
+    const tax = this.catalogService.taxes.value()?.find((item) => item.code === taxType);
+    return tax ? `${tax.description} (${tax.percentage}%)` : taxType;
+  }
+
+  syncTaxDisplay(): void {
+    const code = this.form.get('taxType')?.value as string | null;
+    const tax = this.catalogService.taxes.value()?.find((item) => item.code === code);
+    this.taxDisplay.setValue(tax ? `${tax.description} (${tax.percentage}%)` : code ?? '', {
+      emitEvent: false,
+    });
   }
 
   // ── Draft persistence ────────────────────────────────────────────
@@ -568,11 +576,15 @@ export class ProductFormComponent implements OnInit {
   });
 
   // ── Catalog options ───────────────────────────────────────────────
-  readonly taxOptions = [
-    { value: 'EXENTO', label: 'Exento' },
-    { value: 'IVA_5', label: 'IVA 5%' },
-    { value: 'IVA_19', label: 'IVA 19%' },
-  ];
+  readonly taxOptions = computed(() =>
+    (this.catalogService.taxes.value() ?? [])
+      .filter((tax) => tax.active)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((tax) => ({
+        code: tax.code,
+        label: `${tax.description} (${tax.percentage}%)`,
+      })),
+  );
 
   readonly costingOptions = [
     { value: 'PEPS', label: 'PEPS (Primero en entrar, primero en salir)' },
@@ -598,6 +610,13 @@ export class ProductFormComponent implements OnInit {
       const salePrice = this.calculateSalePrice(cost, margin, tax);
 
       this.form.get('salePrice')!.setValue(salePrice, { emitEvent: false });
+    });
+
+    effect(() => {
+      // Keep the tax autocomplete label in sync with the catalog and the form code.
+      this.catalogService.taxes.value();
+      this.form.get('taxType')?.value;
+      this.syncTaxDisplay();
     });
 
     effect(() => {
@@ -876,6 +895,7 @@ export class ProductFormComponent implements OnInit {
       this.categoryDisplay,
       this.groupDisplay,
       this.uomDisplay,
+      this.taxDisplay,
     ].forEach((c) => c.setValue('', { emitEvent: false }));
     [
       this.typeFilter,
@@ -960,7 +980,8 @@ export class ProductFormComponent implements OnInit {
   }
 
   private getTaxRate(taxType: string | null | undefined): number {
-    return taxType === 'IVA_5' ? 5 : taxType === 'IVA_19' ? 19 : 0;
+    if (!taxType) return 0;
+    return this.catalogService.taxes.value()?.find((tax) => tax.code === taxType)?.percentage ?? 0;
   }
 
   private markPriceEntriesChanged(): void {
@@ -1496,6 +1517,7 @@ export class ProductFormComponent implements OnInit {
     this.markPriceEntriesChanged();
     this.clearPriceListSearch();
     this.syncPriceEntriesWithCatalog();
+    this.syncTaxDisplay();
   }
 
   private enableForm(): void {
@@ -1718,6 +1740,21 @@ export class ProductFormComponent implements OnInit {
         this.form.get('productTypeId')!.setValue(t.id);
         this.typeDisplay.setValue(t.name, { emitEvent: false });
         this.typeFilter.set('');
+      });
+  }
+
+  openCreateTax(initialDescription?: string): void {
+    this.dialog
+      .open<QuickCreateTaxDialogComponent, QuickCreateTaxData, Tax>(
+        QuickCreateTaxDialogComponent,
+        { disableClose: true, width: '480px', data: { initialDescription } },
+      )
+      .afterClosed()
+      .subscribe((tax) => {
+        if (!tax) return;
+        this.form.get('taxType')!.setValue(tax.code);
+        this.syncTaxDisplay();
+        this.catalogService.reloadTaxes();
       });
   }
 

@@ -84,12 +84,26 @@
               <span matSuffix>%</span>
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>IVA</mat-label>
-              <mat-select formControlName="taxType">
-                <mat-option value="EXENTO">Exento</mat-option>
-                <mat-option value="IVA_5">IVA 5%</mat-option>
-                <mat-option value="IVA_19">IVA 19%</mat-option>
-              </mat-select>
+              <mat-label>Impuesto</mat-label>
+              <input
+                matInput
+                [formControl]="taxDc"
+                [matAutocomplete]="autoTax"
+                (input)="onTaxInput($any($event.target).value)"
+                (blur)="syncTaxDisplay()"
+                autocomplete="off"
+              />
+              <mat-autocomplete #autoTax="matAutocomplete" (optionSelected)="onTaxSelected($event.option.value)">
+                @for (tax of filteredTaxOptions(); track tax.code) {
+                  <mat-option [value]="tax.code">{{ tax.label }}</mat-option>
+                }
+                @if (canCreateTax()) {
+                  <mat-option value="__create__" class="qc-create-option">
+                    <mat-icon class="qc-icon">add_circle</mat-icon>
+                    Crear{{ taxFilter() ? ' "' + taxFilter() + '"' : ' nuevo impuesto' }}
+                  </mat-option>
+                }
+              </mat-autocomplete>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>P.Venta</mat-label>

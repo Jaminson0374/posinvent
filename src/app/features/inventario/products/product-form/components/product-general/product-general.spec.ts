@@ -55,6 +55,7 @@ class TestHost {
     categoryDisplay: new FormControl(''),
     groupDisplay: new FormControl(''),
     uomDisplay: new FormControl(''),
+    taxDisplay: new FormControl(''),
   };
 }
 
