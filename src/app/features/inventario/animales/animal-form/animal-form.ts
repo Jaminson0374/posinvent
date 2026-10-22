@@ -15,7 +15,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { AnimalService } from '../../../../core/services/animal.service';
 import { ThirdPartyService } from '../../../../core/services/third-party.service';
-import { QuickCreateSupplierDialogComponent } from '../../../admin/products/dialogs/quick-create-supplier.dialog';
+import { QuickCreateSupplierDialogComponent } from '../../products/dialogs/quick-create-supplier.dialog';
 import type { ThirdParty } from '../../../../core/models/third-party.model';
 import type { AnimalRequest, Species } from '../../../../core/models/animal.model';
 

@@ -22,7 +22,7 @@ import { SupplierInvoiceService } from '../../../../core/services/supplier-invoi
 import { ThirdPartyService } from '../../../../core/services/third-party.service';
 import { PurchaseOrderService } from '../../../../core/services/purchase-order.service';
 import { AuthService } from '../../../../core/auth/auth.service';
-import { QuickCreateSupplierDialogComponent } from '../../../admin/products/dialogs/quick-create-supplier.dialog';
+import { QuickCreateSupplierDialogComponent } from '../../../inventario/products/dialogs/quick-create-supplier.dialog';
 import type {
   ThirdParty,
   ThirdPartySupplierOption,

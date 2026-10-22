@@ -23,7 +23,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { PaymentService } from '../../../../core/services/payment.service';
 import { ThirdPartyService } from '../../../../core/services/third-party.service';
 import { SupplierInvoiceService } from '../../../../core/services/supplier-invoice.service';
-import { QuickCreateSupplierDialogComponent } from '../../../admin/products/dialogs/quick-create-supplier.dialog';
+import { QuickCreateSupplierDialogComponent } from '../../../inventario/products/dialogs/quick-create-supplier.dialog';
 import type {
   ThirdParty,
   ThirdPartySupplierOption,

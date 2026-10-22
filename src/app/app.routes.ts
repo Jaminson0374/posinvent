@@ -495,21 +495,21 @@ export const routes: Routes = [
               {
                 path: '',
                 loadComponent: () =>
-                  import('./features/admin/products/product-list/product-list').then(
+                  import('./features/inventario/products/product-list/product-list').then(
                     (m) => m.ProductListComponent,
                   ),
               },
               {
                 path: 'nuevo',
                 loadComponent: () =>
-                  import('./features/admin/products/product-form/product-form').then(
+                  import('./features/inventario/products/product-form/product-form').then(
                     (m) => m.ProductFormComponent,
                   ),
               },
               {
                 path: ':id',
                 loadComponent: () =>
-                  import('./features/admin/products/product-form/product-form').then(
+                  import('./features/inventario/products/product-form/product-form').then(
                     (m) => m.ProductFormComponent,
                   ),
               },

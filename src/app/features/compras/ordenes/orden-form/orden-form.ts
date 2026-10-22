@@ -38,7 +38,7 @@ import { ThirdPartyService } from '../../../../core/services/third-party.service
 import { UnitOfMeasureService } from '../../../../core/services/unit-of-measure.service';
 import { CompanyConfigService } from '../../../../core/services/company-config.service';
 import { PurchaseRetentionConfigService } from '../../../../core/services/purchase-retention-config.service';
-import { QuickCreateSupplierDialogComponent } from '../../../admin/products/dialogs/quick-create-supplier.dialog';
+import { QuickCreateSupplierDialogComponent } from '../../../inventario/products/dialogs/quick-create-supplier.dialog';
 import type {
   ThirdParty,
   ThirdPartySupplierOption,

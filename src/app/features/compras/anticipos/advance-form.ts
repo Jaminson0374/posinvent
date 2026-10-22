@@ -18,7 +18,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { AdvanceService } from '../../../core/services/advance.service';
 import { ThirdPartyService } from '../../../core/services/third-party.service';
-import { QuickCreateSupplierDialogComponent } from '../../../features/admin/products/dialogs/quick-create-supplier.dialog';
+import { QuickCreateSupplierDialogComponent } from '../../inventario/products/dialogs/quick-create-supplier.dialog';
 import type { ThirdParty, ThirdPartySupplierOption } from '../../../core/models/third-party.model';
 import type { AdvanceRequest } from '../../../core/models/advance.model';
 import type { PaymentMethod } from '../../../core/models/payment.model';

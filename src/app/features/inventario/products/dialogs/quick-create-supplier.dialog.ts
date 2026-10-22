@@ -17,7 +17,7 @@ import {
   ThirdParty,
   ThirdPartyRequest,
 } from '../../../../core/models/third-party.model';
-import { calculateNitDv } from '../../third-parties/utils/nit-dv.utils';
+import { calculateNitDv } from '../../../admin/third-parties/utils/nit-dv.utils';
 
 @Component({
   selector: 'app-quick-create-supplier-dialog',
