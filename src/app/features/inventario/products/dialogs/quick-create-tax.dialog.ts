@@ -49,8 +49,8 @@ export interface QuickCreateTaxData {
           <input matInput formControlName="dianCode" maxlength="2" placeholder="01" />
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Siigo Tax ID</mat-label>
-          <input matInput formControlName="siigoTaxId" maxlength="50" placeholder="13156" />
+          <mat-label>ID Proveedor Tecnológico</mat-label>
+          <input matInput formControlName="providerExternalId" maxlength="50" placeholder="13156" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="qcd-span-2">
           <mat-label>Observación</mat-label>
@@ -89,7 +89,7 @@ export class QuickCreateTaxDialogComponent {
     description: [this.data?.initialDescription ?? '', [Validators.required, Validators.maxLength(100)]],
     percentage: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
     dianCode: ['', [Validators.maxLength(2)]],
-    siigoTaxId: ['', [Validators.maxLength(50)]],
+    providerExternalId: ['', [Validators.maxLength(50)]],
     observation: ['', [Validators.maxLength(500)]],
   });
 
@@ -106,7 +106,7 @@ export class QuickCreateTaxDialogComponent {
       description: value.description!.trim(),
       percentage: Number(value.percentage),
       dianCode: value.dianCode?.trim() || null,
-      siigoTaxId: value.siigoTaxId?.trim() || null,
+      providerExternalId: value.providerExternalId?.trim() || null,
       observation: value.observation?.trim() || null,
       sortOrder: 0,
       active: true,

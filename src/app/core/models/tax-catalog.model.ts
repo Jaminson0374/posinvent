@@ -21,7 +21,7 @@ export interface Tax {
   percentage: number;
   observation: string | null;
   dianCode: string | null;
-  siigoTaxId: string | null;
+  providerExternalId: string | null;
   sortOrder: number;
   active: boolean;
 }
@@ -32,7 +32,7 @@ export interface TaxRequest {
   percentage: number;
   observation: string | null;
   dianCode: string | null;
-  siigoTaxId: string | null;
+  providerExternalId: string | null;
   sortOrder: number;
   active: boolean;
 }
